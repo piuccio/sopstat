@@ -51,7 +51,7 @@ void usage(void) {
 }
 
 void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-        /* Serialize the header structure */
+        
         printf("Header \n\t[timestamp]:%ld.%ld \n\t[caplen]:%d \n\t[wirelen]:%d \n", header->ts.tv_sec, header->ts.tv_usec , header->caplen, header->len);
 
 		/* I assume that all packets are ethernet */
@@ -80,15 +80,23 @@ void parse_ip(const u_char *packet) {
 	const struct ip *datagram; /* The IP header */
 	datagram = (struct ip*)(packet);
 	
+	/* Serialize the header structure */
+    int i;
+    for (i=0; i<20; i++) {
+        printf("%x ",*(packet + i) );
+    }
+        
 	printf("IP Header\n");
-	printf("\t[version]: %d\n", datagram->ip_v);
-	printf("\t[header length]: %d\n", datagram->ip_hl);
-	printf("\t[TOS]: %d\n", datagram->ip_tos);
-	printf("\t[total length]: %d\n", datagram->ip_len);
-	printf("\t[fragment]: %d\n", datagram->ip_off);
-	printf("\t[TTL]: %d\n", datagram->ip_ttl);
-	printf("\t[protocol]: %x\n", datagram->ip_p);
-	printf("\t[checksum]: %x\n", datagram->ip_sum);
+	printf("\t[version]: %u\n", datagram->ip_v);
+	/* header lenght isin number of 32bit word, *4 byte */
+	printf("\t[header length]: %u byte\n", (datagram->ip_hl * 4) );
+	printf("\t[TOS]: %u\n", datagram->ip_tos);
+	printf("\t[total length]: %hu byte\n", datagram->ip_len);
+	printf("\t[identification]: %hX\n", datagram->ip_id);
+	printf("\t[fragment]: %hu\n", datagram->ip_off);
+	printf("\t[TTL]: %hu\n", datagram->ip_ttl);
+	printf("\t[protocol]: %hu\n", datagram->ip_p);
+	printf("\t[checksum]: %hX\n", datagram->ip_sum);
 	printf("\t[source]: %x\n", datagram->ip_src.s_addr);
 	printf("\t[destination]: %x\n", datagram->ip_dst.s_addr);
 }
