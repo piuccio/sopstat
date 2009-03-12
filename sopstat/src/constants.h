@@ -11,6 +11,7 @@
  * PROTOCOL CODES
  */
  #define SIZE_ETHERNET 14
+ #define SIZE_UDP 8
  
  
 #endif /*CONSTANTS_H_*/
