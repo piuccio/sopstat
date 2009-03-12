@@ -20,6 +20,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
 void parse_ip(const u_char *);
 void parse_tcp(const u_char *);
 void parse_udp(const u_char *);
+void iptos(const uint32_t, char *);
 
 int main(int argc, char* argv[]) {
         pcap_t *handle;
@@ -86,6 +87,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
 void parse_ip(const u_char *packet) {
 	const struct ip *datagram; /* The IP header */
 	datagram = (struct ip*)(packet);
+	char src[MAX_IP_ADDR], dst[MAX_IP_ADDR];
 	
 	printf("IP Header\n");
 	printf("\t[version]: %u\n", datagram->ip_v);
@@ -98,8 +100,13 @@ void parse_ip(const u_char *packet) {
 	printf("\t[TTL]: %hu\n", datagram->ip_ttl);
 	printf("\t[protocol]: %hu\n", datagram->ip_p);
 	printf("\t[checksum]: %#.4hx\n", ntohs(datagram->ip_sum));
-	printf("\t[source]: %#.8x\n", ntohl(datagram->ip_src.s_addr));
-	printf("\t[destination]: %#.8x\n", ntohl(datagram->ip_dst.s_addr));
+	/* change the addresses representation */
+	iptos(ntohl(datagram->ip_src.s_addr), src);
+	printf("\t[source]: %s\n", src);
+	iptos(ntohl(datagram->ip_dst.s_addr), dst);
+	printf("\t[destination]: %s\n", dst);
+	
+	
 	
 	/* Read the IP payload */
 	switch( datagram->ip_p ) {
@@ -168,4 +175,15 @@ void parse_udp(const u_char *packet) {
 		printf("%.2x ", *(packet + i));
 	}
 	printf("\n");
+}
+
+void iptos(const uint32_t address, char *str) {
+	
+	int ind = address>>24;
+	int ind2 = (address & 0x00ff0000)>>16;
+	int ind3 = (address & 0x0000ff00)>>8;
+    int ind4 = (address & 0x000000ff);
+    
+    sprintf(str,"%d.%d.%d.%d",ind,ind2,ind3,ind4);
+    return;
 }
