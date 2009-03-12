@@ -17,7 +17,9 @@
 
 void usage(void);
 void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
-void parse_ip(const u_char *datagram);
+void parse_ip(const u_char *);
+void parse_tcp(const u_char *);
+void parse_udp(const u_char *);
 
 int main(int argc, char* argv[]) {
         pcap_t *handle;
@@ -62,9 +64,9 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         ethernet = (struct ether_header*)(packet);
 
         /* Serialize the Ethernet header structure */
-        printf("Ethernet Header \n\t[src addr]: %x:%x:%x:%x:%x:%x \n", ethernet->ether_shost[0],ethernet->ether_shost[1],ethernet->ether_shost[2],ethernet->ether_shost[3],ethernet->ether_shost[4],ethernet->ether_shost[5]);
-        printf("\t[dst addr]: %x:%x:%x:%x:%x:%x \n", ethernet->ether_dhost[0], ethernet->ether_dhost[1], ethernet->ether_dhost[2], ethernet->ether_dhost[3], ethernet->ether_dhost[4], ethernet->ether_dhost[5]);
-        printf("\t[type]: %x \n", ntohs(ethernet->ether_type));
+        printf("Ethernet Header \n\t[src addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_shost[0],ethernet->ether_shost[1],ethernet->ether_shost[2],ethernet->ether_shost[3],ethernet->ether_shost[4],ethernet->ether_shost[5]);
+        printf("\t[dst addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_dhost[0], ethernet->ether_dhost[1], ethernet->ether_dhost[2], ethernet->ether_dhost[3], ethernet->ether_dhost[4], ethernet->ether_dhost[5]);
+        printf("\t[type]: %#.4x \n", ntohs(ethernet->ether_type));
         
         /* Read the ethernet payload */
         switch( ntohs(ethernet->ether_type) ) {
@@ -89,13 +91,81 @@ void parse_ip(const u_char *packet) {
 	printf("\t[version]: %u\n", datagram->ip_v);
 	/* header lenght isin number of 32bit word, *4 byte */
 	printf("\t[header length]: %u byte\n", (datagram->ip_hl * 4) );
-	printf("\t[TOS]: 0x%hX\n", datagram->ip_tos);
+	printf("\t[TOS]: 0x%hx\n", datagram->ip_tos);
 	printf("\t[total length]: %hu byte\n", ntohs(datagram->ip_len));
-	printf("\t[identification]: 0x%hX\n", ntohs(datagram->ip_id));
+	printf("\t[identification]: %#.4hx\n", ntohs(datagram->ip_id));
 	printf("\t[fragment]: %hu\n", ntohs(datagram->ip_off));
 	printf("\t[TTL]: %hu\n", datagram->ip_ttl);
 	printf("\t[protocol]: %hu\n", datagram->ip_p);
-	printf("\t[checksum]: 0x%hX\n", ntohs(datagram->ip_sum));
-	printf("\t[source]: 0x%x\n", ntohl(datagram->ip_src.s_addr));
-	printf("\t[destination]: 0x%x\n", ntohl(datagram->ip_dst.s_addr));
+	printf("\t[checksum]: %#.4hx\n", ntohs(datagram->ip_sum));
+	printf("\t[source]: %#.8x\n", ntohl(datagram->ip_src.s_addr));
+	printf("\t[destination]: %#.8x\n", ntohl(datagram->ip_dst.s_addr));
+	
+	/* Read the IP payload */
+	switch( datagram->ip_p ) {
+        case IPPROTO_ICMP:
+        	printf("ICMP\n");
+        	//I still have nothing to do with ICMP
+       		break;
+       	case IPPROTO_TCP:
+        	parse_tcp( (u_char*)(packet + (datagram->ip_hl * 4)) );
+        	break;
+        case IPPROTO_UDP:
+        	parse_udp( (u_char*)(packet + (datagram->ip_hl * 4)) );
+        	break;
+       	default:
+       		printf("Unrecognized packet\n");
+       		break;
+	}
+}
+
+void parse_tcp(const u_char *packet) {
+	printf("TCP Header\n");
+	
+	const struct tcphdr *payload; /* The TCP header */
+	payload = (struct tcphdr*)(packet);
+	
+	/* ports u_int16 */
+	printf("\t[src port]: %hu\n", ntohs(payload->source));
+	printf("\t[dst port]: %hu\n", ntohs(payload->dest));
+	/* seq, ack u_int32 */
+    printf("\t[seq]: %#.8x\n", ntohl(payload->seq));
+    printf("\t[ack seq]: %#.8x\n", ntohl(payload->ack_seq));
+    /* flags endian managed by libraries */
+    printf("\t[res1]: %hd\n", payload->res1);
+    /* Header lenght in 4byte words */
+    printf("\t[header length]: %hd byte\n", payload->doff*4);
+    printf("\t[fin]: %hd\n", payload->fin);
+    printf("\t[syn]: %hd\n", payload->syn);
+    printf("\t[rst]: %hd\n", payload->rst);
+    printf("\t[psh]: %hd\n", payload->psh);
+    printf("\t[ack]: %hd\n", payload->ack);
+    printf("\t[urg]: %hd\n", payload->urg);
+    printf("\t[res2]: %hd\n", payload->res2);
+	/* window, checksum, urg u_int16 */
+	printf("\t[window]: %#.4hx\n", ntohs(payload->window));
+	printf("\t[checksum]: %#.4hx\n", ntohs(payload->check));
+	printf("\t[urg_ptr]: %hd\n", ntohs(payload->urg_ptr));
+}
+
+void parse_udp(const u_char *packet) {
+	printf("UDP Header\n");
+	
+	const struct udphdr *payload; /* The UDP header */
+	payload = (struct udphdr*)(packet);
+	
+	/* All u_int16 */
+	printf("\t[src port]: %hu\n", ntohs(payload->source));
+	printf("\t[dst port]: %hu\n", ntohs(payload->dest));
+	printf("\t[length]: %hu byte\n", ntohs(payload->len));
+	printf("\t[checksum]: %#.4hx\n", ntohs(payload->check));
+	
+	/* UDP payload */
+	printf("UDP Payload\n");
+	int i, len;
+	len = ntohs(payload->len);
+	for (i = SIZE_UDP; i<len; i++) {
+		printf("%.2x ", *(packet + i));
+	}
+	printf("\n");
 }
