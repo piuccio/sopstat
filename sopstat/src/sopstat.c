@@ -3,6 +3,7 @@
  * with the captured stream creating an output file
  * with some statistics
  **/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
