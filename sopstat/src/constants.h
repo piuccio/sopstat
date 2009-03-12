@@ -12,6 +12,7 @@
  */
  #define SIZE_ETHERNET 14
  #define SIZE_UDP 8
+ #define MAX_IP_ADDR 16
  
  
 #endif /*CONSTANTS_H_*/
