@@ -11,8 +11,6 @@
  * PROTOCOL CODES
  */
  #define SIZE_ETHERNET 14
- #define ARP 1544
- #define IP 8
  
  
 #endif /*CONSTANTS_H_*/
