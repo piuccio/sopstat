@@ -4,7 +4,11 @@
 #include "constants.h"
 #include "packet.h"
 
-u_long first_timestamp=0;
+boolean first_packet = true;
+u_long first_timestamp = 0;
+u_long last_timestamp_tcp = 0, last_timestamp_udp = 0;;
+u_int last_length_tcp = 0, last_length_udp = 0;
+
 /**
  * Extract all the useful informartions from the packet and return
  * TRUE  -> this is a valid packet
@@ -20,11 +24,7 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
 			printf("\n\t[caplen]:%d \n\t[wirelen]:%d \n", header->caplen, header->len);
 		#endif
 		
-		/* Get the timestamp (relative) and the length on the wire */
-		if ( first_timestamp == 0 ) {
-			first_timestamp = header->ts.tv_sec;
-		}
-		
+		/* Measures on timestamp and length */
 		stat->timestamp = header->ts.tv_sec - first_timestamp;
 		stat->wirelen = header->len;
 		
@@ -34,9 +34,9 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
 
         /* Serialize the Ethernet header structure */
         #ifdef DEBUG
-        printf("Ethernet Header \n\t[src addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_shost[0],ethernet->ether_shost[1],ethernet->ether_shost[2],ethernet->ether_shost[3],ethernet->ether_shost[4],ethernet->ether_shost[5]);
-        printf("\t[dst addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_dhost[0], ethernet->ether_dhost[1], ethernet->ether_dhost[2], ethernet->ether_dhost[3], ethernet->ether_dhost[4], ethernet->ether_dhost[5]);
-        printf("\t[type]: %#.4x \n", ntohs(ethernet->ether_type));
+        	printf("Ethernet Header \n\t[src addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_shost[0],ethernet->ether_shost[1],ethernet->ether_shost[2],ethernet->ether_shost[3],ethernet->ether_shost[4],ethernet->ether_shost[5]);
+        	printf("\t[dst addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_dhost[0], ethernet->ether_dhost[1], ethernet->ether_dhost[2], ethernet->ether_dhost[3], ethernet->ether_dhost[4], ethernet->ether_dhost[5]);
+        	printf("\t[type]: %#.4x \n", ntohs(ethernet->ether_type));
         #endif
         
         /* Read the ethernet payload */
@@ -56,6 +56,33 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
         }
         
 		/* All the packet informations are collected */
+		if ( valid ) {
+			if ( first_packet ) {
+				/* This is the first packet, scale the time */
+				first_timestamp = stat->timestamp;
+				stat->timestamp = 0;
+				first_packet = false;
+			}
+			
+			/* Store some values for the aggregated measures */
+			switch ( stat->proto ) {
+				case IPPROTO_TCP:
+					//Aggregate
+					stat->alen = ( last_timestamp_tcp == stat->timestamp ) ? last_length_tcp + stat->wirelen : stat->wirelen;
+					last_length_tcp = stat->alen;
+					last_timestamp_tcp = stat->timestamp;
+					break;
+				case IPPROTO_UDP:
+					stat->alen = ( last_timestamp_udp == stat->timestamp ) ? last_length_udp + stat->wirelen : stat->wirelen;
+					last_length_udp = stat->alen;
+					last_timestamp_udp = stat->timestamp;
+					break;
+				default:
+					//Why am I here ??
+					break;
+			}
+		}
+		
         return valid;
 }
 
@@ -229,5 +256,5 @@ void serialize_packet(const struct packet_stat *pkt, char *str) {
 	char src[MAX_IP_ADDR], dst[MAX_IP_ADDR];
 	iptos( pkt->src, src);
 	iptos( pkt->dst, dst);
-	sprintf(str, "%lu %u %s %s %u %hu %hu %hu %hu", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto, pkt->ttl);
+	sprintf(str, "%lu %u %s %s %u %hu %hu %hu %hu %u", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto, pkt->ttl, pkt->alen);
 }

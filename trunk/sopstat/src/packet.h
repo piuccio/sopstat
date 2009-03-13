@@ -9,8 +9,8 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-/* long: 20, int: 10*2, short: 5*6, blank: 1*8 +margin :P */
-#define MAX_SERIALIZATION 85 
+/* long: 20, int: 10*3, short: 5*6, blank: 1*8 +margin :P */
+#define MAX_SERIALIZATION 95 
 
 struct packet_stat {
 	u_long timestamp; /* Unix time of the packet arrival */
@@ -22,6 +22,7 @@ struct packet_stat {
 	u_short src_p; /* Source port */
 	u_short dst_p; /* Destination port */
 	u_short iplen; /* Length of the IP payload */
+	u_int alen; /* Aggregated length, sum of sizes of packet in that time interval */
 };
 
 
