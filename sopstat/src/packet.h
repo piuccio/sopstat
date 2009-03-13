@@ -37,6 +37,7 @@ struct host {
 /* PROTOTYPE */
 void serialize_packet(const struct packet_stat *, char *);
 void iptos(const u_int, char *);
+boolean stoip(u_int *, char*);
 boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char *);
 boolean parse_ip(const u_char *, struct packet_stat *);
 void parse_tcp(const u_char *, struct packet_stat *);

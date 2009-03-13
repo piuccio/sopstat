@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "constants.h"
 #include "packet.h"
 
@@ -192,6 +193,29 @@ void iptos(const u_int address, char *str) {
     
     sprintf(str,"%d.%d.%d.%d",ind,ind2,ind3,ind4);
     return;
+}
+
+boolean stoip(u_int *ip, char* str) {
+	*ip = 0;
+	char* token = NULL;
+	char delim[] = ".";
+	int i=3;
+	
+	token = strtok( str, delim );
+	if ( token == NULL ) return false;
+	
+	// I know the number of tokens expected
+	while ( token != NULL && i >= 0 ) {
+		//if ( !isdigit(token) ) return false; /* this doesn't work */
+		*ip = *ip + ( atoi( token ) << 8*i );
+		if ( *ip == 0 ) return false; /* 0 ip means something wrong */
+		token  = strtok( NULL, "." );
+		i--;
+	}
+	if ( token != NULL ) return false; /* too many dots */
+	if ( i >= 0 ) return false; /* too few dots */
+	
+	return true;
 }
 
 /**
