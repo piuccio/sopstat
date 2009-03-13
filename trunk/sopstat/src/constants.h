@@ -1,11 +1,10 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
+typedef enum {false, true} boolean;
 /**
  * EXIT CODES
  **/
- #define TRUE 1
- #define FALSE 0
  #define NO_ERROR 0
  #define INPUT_ERROR 10 
 
