@@ -6,7 +6,9 @@ typedef enum {false, true} boolean;
  * EXIT CODES
  **/
  #define NO_ERROR 0
- #define INPUT_ERROR 10 
+ #define INPUT_ERROR 10
+ #define INVALID_FOLDER 11
+ #define INVALID_IP 12
 
 /**
  * PROTOCOL CODES
