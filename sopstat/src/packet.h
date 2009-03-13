@@ -1,6 +1,14 @@
 #ifndef PACKET_H_
 #define PACKET_H_
 
+#include <pcap.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+
 /* long: 20, int: 10*2, short: 5*6, blank: 1*8 +margin :P */
 #define MAX_SERIALIZATION 85 
 
@@ -17,8 +25,22 @@ struct packet_stat {
 };
 
 
+/* Define the host structure */
+typedef enum {upstream, downstream} direction;
+
+struct host {
+	u_int ip;  /* IP of the host */
+	struct packet_stat *flow;
+	struct host *next;
+}; 
+
 /* PROTOTYPE */
 void serialize_packet(const struct packet_stat *, char *);
 void iptos(const u_int, char *);
+boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char *);
+boolean parse_ip(const u_char *, struct packet_stat *);
+void parse_tcp(const u_char *, struct packet_stat *);
+void parse_udp(const u_char *, struct packet_stat *);
+
 
 #endif /*PACKET_H_*/
