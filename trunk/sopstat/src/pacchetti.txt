@@ -1,0 +1,278 @@
+No.     Time        Source                Destination           Protocol Info
+      1 0.000000    74.125.39.18          10.0.0.4              TCP      https > 50438 [RST] Seq=0 Len=0
+
+Frame 1 (60 bytes on wire, 60 bytes captured)
+    Arrival Time: Mar  7, 2009 11:14:39.294895000
+    [Time delta from previous captured frame: 0.000000000 seconds]
+    [Time delta from previous displayed frame: 0.000000000 seconds]
+    [Time since reference or first frame: 0.000000000 seconds]
+    Frame Number: 1
+    Frame Length: 60 bytes
+    Capture Length: 60 bytes
+    [Frame is marked: True]
+    [Protocols in frame: eth:ip:tcp]
+    [Coloring Rule Name: TCP RST]
+    [Coloring Rule String: tcp.flags.reset eq 1]
+Ethernet II, Src: Belkin_7e:b6:ae (00:11:50:7e:b6:ae), Dst: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+    Destination: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        Address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Source: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        Address: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Type: IP (0x0800)
+    Trailer: 000000000000
+Internet Protocol, Src: 74.125.39.18 (74.125.39.18), Dst: 10.0.0.4 (10.0.0.4)
+    Version: 4
+    Header length: 20 bytes
+    Differentiated Services Field: 0x20 (DSCP 0x08: Class Selector 1; ECN: 0x00)
+        0010 00.. = Differentiated Services Codepoint: Class Selector 1 (0x08)
+        .... ..0. = ECN-Capable Transport (ECT): 0
+        .... ...0 = ECN-CE: 0
+    Total Length: 40
+    Identification: 0xdb82 (56194)
+    Flags: 0x00
+        0... = Reserved bit: Not set
+        .0.. = Don't fragment: Not set
+        ..0. = More fragments: Not set
+    Fragment offset: 0
+    Time to live: 54
+    Protocol: TCP (0x06)
+    Header checksum: 0x2d9b [correct]
+        [Good: True]
+        [Bad : False]
+    Source: 74.125.39.18 (74.125.39.18)
+    Destination: 10.0.0.4 (10.0.0.4)
+Transmission Control Protocol, Src Port: https (443), Dst Port: 50438 (50438), Seq: 0, Len: 0
+    Source port: https (443)
+    Destination port: 50438 (50438)
+    Sequence number: 0    (relative sequence number)
+    Header length: 20 bytes
+    Flags: 0x04 (RST)
+        0... .... = Congestion Window Reduced (CWR): Not set
+        .0.. .... = ECN-Echo: Not set
+        ..0. .... = Urgent: Not set
+        ...0 .... = Acknowledgment: Not set
+        .... 0... = Push: Not set
+        .... .1.. = Reset: Set
+        .... ..0. = Syn: Not set
+        .... ...0 = Fin: Not set
+    Window size: 0
+    Checksum: 0x0a76 [correct]
+        [Good Checksum: True]
+        [Bad Checksum: False]
+
+0000  08 00 27 d5 0a b4 00 11 50 7e b6 ae 08 00 45 20   ..'.....P~....E 
+0010  00 28 db 82 00 00 36 06 2d 9b 4a 7d 27 12 0a 00   .(....6.-.J}'...
+0020  00 04 01 bb c5 06 90 1e d2 f7 00 00 00 00 50 04   ..............P.
+0030  00 00 0a 76 00 00 00 00 00 00 00 00               ...v........
+
+No.     Time        Source                Destination           Protocol Info
+      2 0.381571    CadmusCo_d5:0a:b4     Broadcast             ARP      Who has 10.0.0.1?  Tell 10.0.0.4
+
+Frame 2 (42 bytes on wire, 42 bytes captured)
+    Arrival Time: Mar  7, 2009 11:14:39.676466000
+    [Time delta from previous captured frame: 0.381571000 seconds]
+    [Time delta from previous displayed frame: 0.381571000 seconds]
+    [Time since reference or first frame: 0.381571000 seconds]
+    Frame Number: 2
+    Frame Length: 42 bytes
+    Capture Length: 42 bytes
+    [Frame is marked: True]
+    [Protocols in frame: eth:arp]
+    [Coloring Rule Name: ARP]
+    [Coloring Rule String: arp]
+Ethernet II, Src: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4), Dst: Broadcast (ff:ff:ff:ff:ff:ff)
+    Destination: Broadcast (ff:ff:ff:ff:ff:ff)
+        Address: Broadcast (ff:ff:ff:ff:ff:ff)
+        .... ...1 .... .... .... .... = IG bit: Group address (multicast/broadcast)
+        .... ..1. .... .... .... .... = LG bit: Locally administered address (this is NOT the factory default)
+    Source: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        Address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Type: ARP (0x0806)
+Address Resolution Protocol (request)
+    Hardware type: Ethernet (0x0001)
+    Protocol type: IP (0x0800)
+    Hardware size: 6
+    Protocol size: 4
+    Opcode: request (0x0001)
+    Sender MAC address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+    Sender IP address: 10.0.0.4 (10.0.0.4)
+    Target MAC address: 00:00:00_00:00:00 (00:00:00:00:00:00)
+    Target IP address: 10.0.0.1 (10.0.0.1)
+
+0000  ff ff ff ff ff ff 08 00 27 d5 0a b4 08 06 00 01   ........'.......
+0010  08 00 06 04 00 01 08 00 27 d5 0a b4 0a 00 00 04   ........'.......
+0020  00 00 00 00 00 00 0a 00 00 01                     ..........
+
+No.     Time        Source                Destination           Protocol Info
+      3 0.382786    Belkin_7e:b6:ae       CadmusCo_d5:0a:b4     ARP      10.0.0.1 is at 00:11:50:7e:b6:ae
+
+Frame 3 (60 bytes on wire, 60 bytes captured)
+    Arrival Time: Mar  7, 2009 11:14:39.677681000
+    [Time delta from previous captured frame: 0.001215000 seconds]
+    [Time delta from previous displayed frame: 0.001215000 seconds]
+    [Time since reference or first frame: 0.382786000 seconds]
+    Frame Number: 3
+    Frame Length: 60 bytes
+    Capture Length: 60 bytes
+    [Frame is marked: True]
+    [Protocols in frame: eth:arp]
+    [Coloring Rule Name: ARP]
+    [Coloring Rule String: arp]
+Ethernet II, Src: Belkin_7e:b6:ae (00:11:50:7e:b6:ae), Dst: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+    Destination: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        Address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Source: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        Address: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Type: ARP (0x0806)
+    Trailer: 000000000000000000000000000000000000
+Address Resolution Protocol (reply)
+    Hardware type: Ethernet (0x0001)
+    Protocol type: IP (0x0800)
+    Hardware size: 6
+    Protocol size: 4
+    Opcode: reply (0x0002)
+    Sender MAC address: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+    Sender IP address: 10.0.0.1 (10.0.0.1)
+    Target MAC address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+    Target IP address: 10.0.0.4 (10.0.0.4)
+
+0000  08 00 27 d5 0a b4 00 11 50 7e b6 ae 08 06 00 01   ..'.....P~......
+0010  08 00 06 04 00 02 00 11 50 7e b6 ae 0a 00 00 01   ........P~......
+0020  08 00 27 d5 0a b4 0a 00 00 04 00 00 00 00 00 00   ..'.............
+0030  00 00 00 00 00 00 00 00 00 00 00 00               ............
+
+No.     Time        Source                Destination           Protocol Info
+      4 0.382864    10.0.0.4              211.152.36.37         UDP      Source port: 41900  Destination port: 3924
+
+Frame 4 (94 bytes on wire, 94 bytes captured)
+    Arrival Time: Mar  7, 2009 11:14:39.677759000
+    [Time delta from previous captured frame: 0.000078000 seconds]
+    [Time delta from previous displayed frame: 0.000078000 seconds]
+    [Time since reference or first frame: 0.382864000 seconds]
+    Frame Number: 4
+    Frame Length: 94 bytes
+    Capture Length: 94 bytes
+    [Frame is marked: True]
+    [Protocols in frame: eth:ip:udp:data]
+    [Coloring Rule Name: UDP]
+    [Coloring Rule String: udp]
+Ethernet II, Src: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4), Dst: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+    Destination: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        Address: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Source: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        Address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Type: IP (0x0800)
+Internet Protocol, Src: 10.0.0.4 (10.0.0.4), Dst: 211.152.36.37 (211.152.36.37)
+    Version: 4
+    Header length: 20 bytes
+    Differentiated Services Field: 0x00 (DSCP 0x00: Default; ECN: 0x00)
+        0000 00.. = Differentiated Services Codepoint: Default (0x00)
+        .... ..0. = ECN-Capable Transport (ECT): 0
+        .... ...0 = ECN-CE: 0
+    Total Length: 80
+    Identification: 0x44b7 (17591)
+    Flags: 0x00
+        0... = Reserved bit: Not set
+        .0.. = Don't fragment: Not set
+        ..0. = More fragments: Not set
+    Fragment offset: 0
+    Time to live: 128
+    Protocol: UDP (0x11)
+    Header checksum: 0xf424 [correct]
+        [Good: True]
+        [Bad : False]
+    Source: 10.0.0.4 (10.0.0.4)
+    Destination: 211.152.36.37 (211.152.36.37)
+User Datagram Protocol, Src Port: 41900 (41900), Dst Port: 3924 (3924)
+    Source port: 41900 (41900)
+    Destination port: 3924 (3924)
+    Length: 60
+    Checksum: 0x46c9 [correct]
+        [Good Checksum: True]
+        [Bad Checksum: False]
+Data (52 bytes)
+
+0000  00 11 50 7e b6 ae 08 00 27 d5 0a b4 08 00 45 00   ..P~....'.....E.
+0010  00 50 44 b7 00 00 80 11 f4 24 0a 00 00 04 d3 98   .PD......$......
+0020  24 25 a3 ac 0f 54 00 3c 46 c9 ff ff 01 c6 00 35   $%...T.<F......5
+0030  26 fc 02 ff 00 2c 00 00 00 01 01 90 fd 7f 00 01   &....,..........
+0040  05 28 00 00 c0 00 00 00 00 02 00 00 00 00 00 00   .(..............
+0050  00 00 00 00 13 88 00 00 00 02 00 00 00 02         ..............
+
+No.     Time        Source                Destination           Protocol Info
+      5 0.605497    211.152.36.37         10.0.0.4              UDP      Source port: 3924  Destination port: 41900
+
+Frame 5 (122 bytes on wire, 122 bytes captured)
+    Arrival Time: Mar  7, 2009 11:14:39.900392000
+    [Time delta from previous captured frame: 0.222633000 seconds]
+    [Time delta from previous displayed frame: 0.222633000 seconds]
+    [Time since reference or first frame: 0.605497000 seconds]
+    Frame Number: 5
+    Frame Length: 122 bytes
+    Capture Length: 122 bytes
+    [Frame is marked: True]
+    [Protocols in frame: eth:ip:udp:data]
+    [Coloring Rule Name: UDP]
+    [Coloring Rule String: udp]
+Ethernet II, Src: Belkin_7e:b6:ae (00:11:50:7e:b6:ae), Dst: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+    Destination: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        Address: CadmusCo_d5:0a:b4 (08:00:27:d5:0a:b4)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Source: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        Address: Belkin_7e:b6:ae (00:11:50:7e:b6:ae)
+        .... ...0 .... .... .... .... = IG bit: Individual address (unicast)
+        .... ..0. .... .... .... .... = LG bit: Globally unique address (factory default)
+    Type: IP (0x0800)
+Internet Protocol, Src: 211.152.36.37 (211.152.36.37), Dst: 10.0.0.4 (10.0.0.4)
+    Version: 4
+    Header length: 20 bytes
+    Differentiated Services Field: 0x00 (DSCP 0x00: Default; ECN: 0x00)
+        0000 00.. = Differentiated Services Codepoint: Default (0x00)
+        .... ..0. = ECN-Capable Transport (ECT): 0
+        .... ...0 = ECN-CE: 0
+    Total Length: 108
+    Identification: 0xced5 (52949)
+    Flags: 0x04 (Don't Fragment)
+        0... = Reserved bit: Not set
+        .1.. = Don't fragment: Set
+        ..0. = More fragments: Not set
+    Fragment offset: 0
+    Time to live: 49
+    Protocol: UDP (0x11)
+    Header checksum: 0x78ea [correct]
+        [Good: True]
+        [Bad : False]
+    Source: 211.152.36.37 (211.152.36.37)
+    Destination: 10.0.0.4 (10.0.0.4)
+User Datagram Protocol, Src Port: 3924 (3924), Dst Port: 41900 (41900)
+    Source port: 3924 (3924)
+    Destination port: 41900 (41900)
+    Length: 88
+    Checksum: 0xc6d9 [correct]
+        [Good Checksum: True]
+        [Bad Checksum: False]
+Data (80 bytes)
+
+0000  08 00 27 d5 0a b4 00 11 50 7e b6 ae 08 00 45 00   ..'.....P~....E.
+0010  00 6c ce d5 40 00 31 11 78 ea d3 98 24 25 0a 00   .l..@.1.x...$%..
+0020  00 04 0f 54 a3 ac 00 58 c6 d9 00 01 02 c6 e0 6d   ...T...X.......m
+0030  3b c7 01 ff 00 14 00 00 00 02 00 e2 bb 00 00 00   ;...............
+0040  00 01 00 35 26 fc 03 ff 00 34 00 00 00 01 01 37   ...5&....4.....7
+0050  fd 08 00 01 05 28 00 00 05 28 00 00 00 02 00 00   .....(...(......
+0060  00 00 00 00 00 00 00 00 13 88 00 00 00 02 00 00   ................
+0070  00 02 54 de 66 9e a3 ac 00 00                     ..T.f.....
