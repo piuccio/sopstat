@@ -23,7 +23,7 @@ long num_pkt=0;
 
 int main(int argc, char* argv[]) {
         pcap_t *handle;
-        printf("Prova programma");
+        //printf("Prova programma");
         char errbuf[PCAP_ERRBUF_SIZE];
 		
         // The input file is required
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         /* Take the local IP */
         if ( stoip(&local_ip, argv[3]) == false ) {
         	//Unable to convert the IP, this is not valid
-        	printf("[ERROR] Invalid IP address %s\n", argv[3]);
+        	//printf("[ERROR] Invalid IP address %s\n", argv[3]);
         	return INVALID_IP;
         }
         #ifdef DEBUG
