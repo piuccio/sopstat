@@ -4,11 +4,14 @@
  * with some statistics
  **/
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
 #include "constants.h"
 #include "packet.h"
+
+#define AUX 1
 
 void usage(void);
 void populate_tree(u_char *, const struct pcap_pkthdr *, const u_char *);
@@ -68,7 +71,19 @@ int main(int argc, char* argv[]) {
         
         /* Grab packet in a loop */
         printf("Processing file %s, this may take a while\n", argv[1]); 
-        pcap_loop(handle, -1, populate_tree, NULL);
+        
+     // Try to pass user parameter to the callback function   
+        
+        #ifdef AUX
+        printf("AUX definito\n");
+        u_char aux [] = "pippo";
+        printf("aux: %s\n", aux);
+        pcap_loop(handle, 1, populate_tree, aux);
+        #else
+        printf("AUX non definito");
+        pcap_loop(handle, 5, populate_tree, NULL);
+        #endif
+        
 
         /* And close the session */
         pcap_close(handle);
@@ -94,7 +109,14 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	/* Structure for the relevant informations */
 	struct packet_stat stat;
 	
+	// Passed parameter...
+	#ifdef AUX
+			printf("\nPassed parameter: %s\n", args);
+    #endif
+
+
 	/* Create the statistics for this file */
+
 	if ( !parse_packet(&stat, header, packet) ) {
 		//Nothing to do for this packet
 		#ifdef DEBUG
