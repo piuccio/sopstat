@@ -10,6 +10,7 @@
 #include <pcap.h>
 #include "constants.h"
 #include "packet.h"
+#include "liste.h"
 
 #define AUX 1
 
@@ -27,7 +28,22 @@ long num_pkt=0;
 int main(int argc, char* argv[]) {
         pcap_t *handle;
         char errbuf[PCAP_ERRBUF_SIZE];
-		
+		node prova1, prova2, prova3;
+		strcpy(prova1.ipadd , "ind1");
+		strcpy(prova1.par1 , "ciao pippo");
+		strcpy(prova2.ipadd , "ind1");
+		strcpy(prova2.par1 , "prova passaggio");
+		strcpy(prova3.ipadd , "ind3");
+		strcpy(prova3.par1 , "ultimo dato");
+		ipnode* head = (ipnode*) malloc (sizeof(ipnode));
+		head->next_ip=NULL;
+		head->first_stat=NULL;
+		printf("deve entrare");
+		provalista();
+		insert_node(head, prova1);
+		insert_node(head, prova2);
+		insert_node(head, prova3);
+		print(head->next_ip);
         // The input file is required
         if ( argc < 4 ) {
                 usage();
