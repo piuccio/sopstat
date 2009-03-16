@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2009 by Fabio Crisci   *
+ *   Copyright (C) 2009 by Fabio Crisci                                    *
  *   fabio.crisci@gmail.com   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -74,8 +74,8 @@ int main(int argc, char* argv[]) {
         	printf("[ERROR] Unable to allocate memory for the tree");
         	return MALLOC_ERROR;
         }
-		tree->next_ip=NULL;
-		tree->first_stat=NULL;
+		tree->next=NULL;
+		tree->first=NULL;
 		
         /* Try to access the output path */
         //packet level statistics TCP
@@ -129,27 +129,7 @@ void usage(void) {
 void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 	/* Structure for the relevant informations */
 	struct packet_stat stat;
-	node prova1, prova2, prova3;
-		strcpy(prova1.ipadd , "ind1");
-		strcpy(prova1.par1 , "ciao pippo");
-		strcpy(prova2.ipadd , "ind1");
-		strcpy(prova2.par1 , "prova passaggio");
-		strcpy(prova3.ipadd , "ind3");
-		strcpy(prova3.par1 , "ultimo dato");
-		
-
-		insert_node(tree, prova1);
-		insert_node(tree, prova2);
-		insert_node(tree, prova3);
-		print(tree->next_ip);
-		
-	// Passed parameter...
-	#ifdef AUX
-			printf("\nPassed parameter: %s\n", args);
-    #endif
-
-
-	/* Create the statistics for this file */
+	
 
 	if ( !parse_packet(&stat, header, packet) ) {
 		//Nothing to do for this packet
@@ -163,10 +143,15 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	num_pkt++;
 	if (num_pkt % 1000 == 0) {
 		printf(".");
+		fflush(stdout);
 	}
 	
-	/* This is a valid packet store it in the tree */
-	
+	/* This is a valid packet, store it in the tree */
+	//The host node must be different from local_ip
+	u_int host;
+	host = (stat.src == local_ip) ? stat.dst : stat.src;
+	printf("%#x\n",host);
+	insert_node(tree, host, &stat);
 	
 	/* And output to file */
 	char serial[MAX_SERIALIZATION];
@@ -183,6 +168,9 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 			printf("\nError in protocol representation\n");
 			break;
 	}
+	
+	/* Print the tree */
+	print(tree->next);
 }
 
 

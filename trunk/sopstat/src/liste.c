@@ -10,15 +10,14 @@
 /**
  * Insert a statistic packet inside a list
  */
-void insert_stat(statnode *n , node pkt ) {
-		if (n->next_stat != NULL) {
-			insert_stat(n->next_stat, pkt);
+void insert_stat(packet_stat *n, packet_stat *pkt) {
+		if (n->next != NULL) {
+			insert_stat(n->next, pkt);
 		} else {
-			statnode* last = (statnode*) malloc (sizeof(statnode));
-			strcpy(last->par1, pkt.par1);
-			printf("Inserita statistica: %s\n", last->par1);
-			last->next_stat = NULL;
-			n->next_stat = last;
+			packet_stat* last = (packet_stat*) malloc (sizeof(packet_stat));
+			last = pkt;
+			last->next = NULL;
+			n->next = last;
 		}
 		return;
 }
@@ -29,39 +28,43 @@ void insert_stat(statnode *n , node pkt ) {
  * First look if the ip already exists, otherwise it creates a new one
  * and insert the passed node, containing the collected statistics  
  */
-void insert_node(ipnode* n, node pkt){
-	if (strcmp(n->address,pkt.ipadd)==0){
+void insert_node(ipnode* n, u_int hostip, packet_stat *pkt){
+	if ( n->ip == hostip ){
 		/* Node existing */
-		printf("EntraTO.. trovato ind uguale\n");
-		insert_stat(n->first_stat, pkt);
-	} else if (n->next_ip != NULL){
+		insert_stat(n->first, pkt);
+	} else if (n->next != NULL){
 		/* Iterate on next host. Recursive call */
-		insert_node(n->next_ip, pkt);
+		insert_node(n->next, hostip, pkt);
   	} else {
 		/* Create a new ip node */
 		ipnode* last = (ipnode*) malloc (sizeof(ipnode));
-		strcpy(last->address, pkt.ipadd);
-		last->next_ip = NULL;
-		last->first_stat = (statnode*) malloc (sizeof(statnode));
-		strcpy(last->first_stat->par1, pkt.par1);
-		printf("Inserita statistica: %s\n", last->first_stat->par1);
-		last->first_stat->next_stat = NULL;
-		n->next_ip = last;  
+		last->ip = hostip;
+		last->next = NULL;
+		/* Add the packet stat to the first node */
+		last->first = (packet_stat*) malloc (sizeof(packet_stat));
+		last->first = pkt;
+		last->first->next = NULL;
+		/* Link it in the tree */
+		n->next = last;  
 	}
 	return;
 }
 
 void print(ipnode* n){
-	if (n != NULL){
-	printf("\n -%s- \n", n->address);
-	statnode * tmp = n->first_stat;
-	while (tmp != NULL) {
-	   printf(" %s -> ", tmp->par1);
-	   tmp = tmp->next_stat;
-	}
-	if (n->next_ip != NULL);
-		print(n->next_ip);
-	}
-	printf("\n");
+	char to_print[MAX_SERIALIZATION], ip[MAX_IP_ADDR];
+	if (n != NULL) {
+		iptos(n->ip, ip); 
+		printf("\n[HOST] : %s", ip);
+		packet_stat * tmp = n->first;
+		while (tmp != NULL) {
+			serialize_packet(tmp, to_print);
+			printf("%s\n", to_print);
+			tmp = tmp->next;
+		}
+
+		if (n->next != NULL);
+			//Non si potrebbe fare con un while ?
+			print(n->next);
+		}
 	return;
 }
