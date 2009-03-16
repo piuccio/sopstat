@@ -9,6 +9,7 @@ typedef enum {false, true} boolean;
  #define INPUT_ERROR 10
  #define INVALID_FOLDER 11
  #define INVALID_IP 12
+ #define MALLOC_ERROR 20
 
 /**
  * PROTOCOL CODES
