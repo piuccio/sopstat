@@ -30,12 +30,6 @@ typedef struct packet_stat {
 /* Define the host structure */
 typedef enum {upstream, downstream} direction;
 
-struct host {
-	u_int ip;  /* IP of the host */
-	struct packet_stat *flow;
-	struct host *next;
-}; 
-
 /* PROTOTYPE */
 void serialize_packet(const struct packet_stat *, char *);
 void iptos(const u_int, char *);
@@ -44,6 +38,6 @@ boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_c
 boolean parse_ip(const u_char *, struct packet_stat *);
 void parse_tcp(const u_char *, struct packet_stat *);
 void parse_udp(const u_char *, struct packet_stat *);
-
+void statcopy(packet_stat *, packet_stat *);
 
 #endif /*PACKET_H_*/

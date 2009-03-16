@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2009 by Fabio Crisci                                    *
- *   fabio.crisci@gmail.com   *
+ *   fabio.crisci@gmail.com                                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -99,18 +99,21 @@ int main(int argc, char* argv[]) {
 		printf("Processing file %s, this may take a while\n", argv[1]); 
 		
 		/* Check if there is the 4th parameter that changes the time granularity */
-        if ( argc > 3 ) {
+        if ( false ) {
         	u_char aux [] = "pippo";
         	pcap_loop(handle, 5, populate_tree, aux);
         } else {
-        	pcap_loop(handle, 5, populate_tree, NULL);
+        	pcap_loop(handle, -1, populate_tree, NULL);
         }
 		
 		/* And close the session */
         pcap_close(handle);
         fclose(f[PKT_DISTR_TCP]);
         fclose(f[PKT_DISTR_UDP]);
-
+	
+		/* Print the tree */
+		print(tree);
+		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed\n", num_pkt);
         return NO_ERROR; 
@@ -150,7 +153,6 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	//The host node must be different from local_ip
 	u_int host;
 	host = (stat.src == local_ip) ? stat.dst : stat.src;
-	printf("%#x\n",host);
 	insert_node(tree, host, &stat);
 	
 	/* And output to file */
@@ -168,9 +170,6 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 			printf("\nError in protocol representation\n");
 			break;
 	}
-	
-	/* Print the tree */
-	print(tree->next);
 }
 
 
