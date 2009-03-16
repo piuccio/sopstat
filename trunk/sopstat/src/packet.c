@@ -263,5 +263,15 @@ void serialize_packet(const struct packet_stat *pkt, char *str) {
  * Copy one statistic file to another
  */
 void statcopy(packet_stat *dst, packet_stat *src) {
-	
+	dst->timestamp = src->timestamp;
+	dst->wirelen = src->wirelen;
+	dst->src = src->src;
+	dst->dst = src->dst;
+	dst->ttl = src->ttl;
+	dst->proto = src->proto;
+	dst->src_p = src->src_p;
+	dst->dst_p = src->dst_p;
+	dst->iplen = src->iplen;
+	dst->alen = src->alen;
+	dst->next = NULL;
 }

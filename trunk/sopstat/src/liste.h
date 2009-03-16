@@ -7,18 +7,6 @@
 #include "constants.h"
 #include "packet.h"
 
-/*
-typedef struct node{
-	char ipadd [MAX_IP_ADDR];
-	char par1 [MAX_IP_ADDR];
-} node;
-
-typedef struct statnode {
-	char par1 [MAX_IP_ADDR];
-	struct statnode* next_stat;	
-} statnode;
-*/
-
 typedef struct ipnode {
 	u_long ip;
    char  address [MAX_IP_ADDR];

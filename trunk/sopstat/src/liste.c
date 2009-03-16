@@ -1,5 +1,26 @@
-/* In this library we are going to define the type of the structure that
- * we will intend to use */
+/***************************************************************************
+ *   Copyright (C) 2009 by Matteo Mana                                     *
+ *   matteo.mana@gmail.com                                                *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+/** 
+ * This file defines the list structure that separates the network
+ * flows by hosts 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +36,7 @@ void insert_stat(packet_stat *n, packet_stat *pkt) {
 			insert_stat(n->next, pkt);
 		} else {
 			packet_stat* last = (packet_stat*) malloc (sizeof(packet_stat));
-			last = pkt;
-			last->next = NULL;
+			statcopy(last, pkt);
 			n->next = last;
 		}
 		return;
@@ -42,8 +62,7 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt){
 		last->next = NULL;
 		/* Add the packet stat to the first node */
 		last->first = (packet_stat*) malloc (sizeof(packet_stat));
-		last->first = pkt;
-		last->first->next = NULL;
+		statcopy(last->first, pkt);
 		/* Link it in the tree */
 		n->next = last;  
 	}
@@ -51,19 +70,16 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt){
 }
 
 void print(ipnode* n){
-	char to_print[MAX_SERIALIZATION], ip[MAX_IP_ADDR];
+	char to_print[MAX_SERIALIZATION];
 	if (n != NULL) {
-		iptos(n->ip, ip); 
-		printf("\n[HOST] : %s", ip);
 		packet_stat * tmp = n->first;
 		while (tmp != NULL) {
 			serialize_packet(tmp, to_print);
-			printf("%s\n", to_print);
+			printf("\n%s", to_print);
 			tmp = tmp->next;
 		}
 
 		if (n->next != NULL);
-			//Non si potrebbe fare con un while ?
 			print(n->next);
 		}
 	return;
