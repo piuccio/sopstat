@@ -24,9 +24,8 @@ typedef struct ipnode {
    struct ipnode* next_ip;    	
 } ipnode;
 
-void insert_stat(statnode * , node  );
+void insert_stat(statnode * , node);
 void insert_node(ipnode* , node);
 void print(ipnode* );
-void provalista(void);
 
 #endif /*LISTE_H_*/

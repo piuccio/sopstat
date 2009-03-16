@@ -1,9 +1,26 @@
-/** Sopstat
- * This is the main file, it parses an input file
- * with the captured stream creating an output file
- * with some statistics
+/***************************************************************************
+ *   Copyright (C) 2009 by Fabio Crisci   *
+ *   fabio.crisci@gmail.com   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+/** 
+ * Parses an input file with the captured sopcast stream creating output
+ * statistics files
  **/
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +29,7 @@
 #include "packet.h"
 #include "liste.h"
 
-#define AUX 1
-
+/* Prototypes */
 void usage(void);
 void populate_tree(u_char *, const struct pcap_pkthdr *, const u_char *);
 
@@ -22,29 +38,14 @@ char fname[FILENAME_MAX];
 u_int local_ip; /* hexadecimal form, should be easier to compare */
 
 /* List of packets */
-struct host *pkt_tree;
+ipnode* tree;
 long num_pkt=0;
 
 int main(int argc, char* argv[]) {
         pcap_t *handle;
         char errbuf[PCAP_ERRBUF_SIZE];
-		node prova1, prova2, prova3;
-		strcpy(prova1.ipadd , "ind1");
-		strcpy(prova1.par1 , "ciao pippo");
-		strcpy(prova2.ipadd , "ind1");
-		strcpy(prova2.par1 , "prova passaggio");
-		strcpy(prova3.ipadd , "ind3");
-		strcpy(prova3.par1 , "ultimo dato");
-		ipnode* head = (ipnode*) malloc (sizeof(ipnode));
-		head->next_ip=NULL;
-		head->first_stat=NULL;
-		printf("deve entrare");
-		provalista();
-		insert_node(head, prova1);
-		insert_node(head, prova2);
-		insert_node(head, prova3);
-		print(head->next_ip);
-        // The input file is required
+        
+        /* Check required inputs */
         if ( argc < 4 ) {
                 usage();
                 return INPUT_ERROR;
@@ -67,6 +68,15 @@ int main(int argc, char* argv[]) {
         	printf("Local IP address: %#x\n", local_ip);
         #endif
         
+        /* Initialize the tree */
+        tree = (ipnode*) malloc (sizeof(ipnode));
+        if (tree == NULL) {
+        	printf("[ERROR] Unable to allocate memory for the tree");
+        	return MALLOC_ERROR;
+        }
+		tree->next_ip=NULL;
+		tree->first_stat=NULL;
+		
         /* Try to access the output path */
         //packet level statistics TCP
         sprintf(fname, "%s/distribution_tcp.dat", argv[2]);
@@ -86,22 +96,17 @@ int main(int argc, char* argv[]) {
         
         
         /* Grab packet in a loop */
-        printf("Processing file %s, this may take a while\n", argv[1]); 
-        
-     // Try to pass user parameter to the callback function   
-        
-        #ifdef AUX
-        printf("AUX definito\n");
-        u_char aux [] = "pippo";
-        printf("aux: %s\n", aux);
-        pcap_loop(handle, 1, populate_tree, aux);
-        #else
-        printf("AUX non definito");
-        pcap_loop(handle, 5, populate_tree, NULL);
-        #endif
-        
-
-        /* And close the session */
+		printf("Processing file %s, this may take a while\n", argv[1]); 
+		
+		/* Check if there is the 4th parameter that changes the time granularity */
+        if ( argc > 3 ) {
+        	u_char aux [] = "pippo";
+        	pcap_loop(handle, 5, populate_tree, aux);
+        } else {
+        	pcap_loop(handle, 5, populate_tree, NULL);
+        }
+		
+		/* And close the session */
         pcap_close(handle);
         fclose(f[PKT_DISTR_TCP]);
         fclose(f[PKT_DISTR_UDP]);
@@ -124,7 +129,20 @@ void usage(void) {
 void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 	/* Structure for the relevant informations */
 	struct packet_stat stat;
-	
+	node prova1, prova2, prova3;
+		strcpy(prova1.ipadd , "ind1");
+		strcpy(prova1.par1 , "ciao pippo");
+		strcpy(prova2.ipadd , "ind1");
+		strcpy(prova2.par1 , "prova passaggio");
+		strcpy(prova3.ipadd , "ind3");
+		strcpy(prova3.par1 , "ultimo dato");
+		
+
+		insert_node(tree, prova1);
+		insert_node(tree, prova2);
+		insert_node(tree, prova3);
+		print(tree->next_ip);
+		
 	// Passed parameter...
 	#ifdef AUX
 			printf("\nPassed parameter: %s\n", args);
