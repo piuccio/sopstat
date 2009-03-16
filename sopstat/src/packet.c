@@ -258,3 +258,10 @@ void serialize_packet(const struct packet_stat *pkt, char *str) {
 	iptos( pkt->dst, dst);
 	sprintf(str, "%lu %u %s %s %u %hu %hu %hu %hu %u", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto, pkt->ttl, pkt->alen);
 }
+
+/**
+ * Copy one statistic file to another
+ */
+void statcopy(packet_stat *dst, packet_stat *src) {
+	
+}

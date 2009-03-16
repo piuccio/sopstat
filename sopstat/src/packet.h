@@ -12,7 +12,7 @@
 /* long: 20, int: 10*3, short: 5*6, blank: 1*8 +margin :P */
 #define MAX_SERIALIZATION 95 
 
-struct packet_stat {
+typedef struct packet_stat {
 	u_long timestamp; /* Unix time of the packet arrival */
 	u_short wirelen; /* Length of the packet on the wire (all headers) */
 	u_int src; /* IP source */
@@ -23,7 +23,8 @@ struct packet_stat {
 	u_short dst_p; /* Destination port */
 	u_short iplen; /* Length of the IP payload */
 	u_int alen; /* Aggregated length, sum of sizes of packet in that time interval */
-};
+	struct packet_stat* next; /* Next pointer for the list */
+} packet_stat;
 
 
 /* Define the host structure */
