@@ -33,8 +33,8 @@
 void usage(void);
 void populate_tree(u_char *, const struct pcap_pkthdr *, const u_char *);
 
-FILE* f[MAX_OPEN_FILES];
-char fname[FILENAME_MAX];
+//FILE* f[MAX_OPEN_FILES];
+//char fname[FILENAME_MAX];
 u_int local_ip; /* hexadecimal form, should be easier to compare */
 
 /* List of packets */
@@ -75,10 +75,15 @@ int main(int argc, char* argv[]) {
         	return MALLOC_ERROR;
         }
 		tree->next=NULL;
-		tree->first=NULL;
+		tree->dwTCP=NULL;
+		tree->dwUDP=NULL;
+		tree->upTCP=NULL;
+		tree->upUDP=NULL;
 		
         /* Try to access the output path */
         //packet level statistics TCP
+        
+        /*
         sprintf(fname, "%s/distribution_tcp.dat", argv[2]);
         f[PKT_DISTR_TCP] = fopen(fname, "w");
         if (f[PKT_DISTR_TCP] == NULL) {
@@ -94,6 +99,7 @@ int main(int argc, char* argv[]) {
 			return INVALID_FOLDER;
         }
         
+        */
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
@@ -101,18 +107,19 @@ int main(int argc, char* argv[]) {
 		/* Check if there is the 4th parameter that changes the time granularity */
         if ( false ) {
         	u_char aux [] = "pippo";
-        	pcap_loop(handle, 5, populate_tree, aux);
+        	pcap_loop(handle, -1, populate_tree, aux);
         } else {
         	pcap_loop(handle, -1, populate_tree, NULL);
         }
 		
 		/* And close the session */
         pcap_close(handle);
-        fclose(f[PKT_DISTR_TCP]);
-        fclose(f[PKT_DISTR_UDP]);
+        //fclose(f[PKT_DISTR_TCP]);
+        //fclose(f[PKT_DISTR_UDP]);
 	
 		/* Print the tree */
-		print(tree);
+		// Remember!!! handle return error!!
+		print(tree, argv[2]);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed\n", num_pkt);
@@ -153,18 +160,22 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	//The host node must be different from local_ip
 	u_int host;
 	host = (stat.src == local_ip) ? stat.dst : stat.src;
-	insert_node(tree, host, &stat);
-	
+	direction dir = (stat.src == local_ip) ? upstream : downstream;
+	char iptest[16];
+	iptos(stat.src,iptest);
+	//printf("---Insert node direction: %d, protocol: %d, source: %s\n", dir, stat.proto, iptest);
+	insert_node(tree, host, &stat, dir);
+	//printf("<<< Inserito un nuovo nodo: %x \n", ntohs(tree->next->ip));
 	/* And output to file */
 	char serial[MAX_SERIALIZATION];
 	serialize_packet( &stat, serial );
 	/* Write in the packet level stats according to the type */
 	switch( stat.proto ) {
         case IPPROTO_TCP:
-			fprintf(f[PKT_DISTR_TCP], "%s\n", serial);
+			//fprintf(f[PKT_DISTR_TCP], "%s\n", serial);
 			break;
 		case IPPROTO_UDP:
-			fprintf(f[PKT_DISTR_UDP], "%s\n", serial);
+			//fprintf(f[PKT_DISTR_UDP], "%s\n", serial);
 			break;
 		default:
 			printf("\nError in protocol representation\n");

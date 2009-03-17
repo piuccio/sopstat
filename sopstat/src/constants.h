@@ -21,9 +21,12 @@ typedef enum {false, true} boolean;
 /**
  * FILES
  */
- #define MAX_OPEN_FILES 3
- #define PKT_DISTR_TCP 0
- #define PKT_DISTR_UDP 1
+ #define MAX_OPEN_FILES 5
+ #define PKT_DISTR_dwTCP 0
+ #define PKT_DISTR_dwUDP 1
+ #define PKT_DISTR_upTCP 2
+ #define PKT_DISTR_upUDP 3
+ 
  #define TIME_STAT 2
  
 #endif /*CONSTANTS_H_*/
