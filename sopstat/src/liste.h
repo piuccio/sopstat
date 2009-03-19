@@ -11,7 +11,7 @@ typedef struct ipnode {
    u_long ip;
    u_int alen[FLOWS]; /* Aggregated length of the flow */
    char  address [MAX_IP_ADDR];
-   double num[FLOWS]; /* Number of packets per stream */
+   long num[FLOWS]; /* Number of packets per stream */
    struct packet_stat* first[FLOWS];
    struct packet_stat* last[FLOWS];
    struct ipnode* next;

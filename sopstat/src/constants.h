@@ -29,6 +29,7 @@ typedef enum {false, true} boolean;
  
  #define FLOWS 4
  
- #define TIME_STAT 2
+ #define TIME_GRANULARITY 1
+ #define PACKET_GRANULARITY 1
  
 #endif /*CONSTANTS_H_*/
