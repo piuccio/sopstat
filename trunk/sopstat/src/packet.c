@@ -224,7 +224,7 @@ void serialize_packet(const struct packet_stat *pkt, char *str) {
 	char src[MAX_IP_ADDR], dst[MAX_IP_ADDR];
 	iptos( pkt->src, src);
 	iptos( pkt->dst, dst);
-	sprintf(str, "%lu %u %s %s %u %hu %hu %hu", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto);
+	sprintf(str, "%d %u %s %s %u %hu %hu %hu", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto);
 }
 
 /**
