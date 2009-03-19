@@ -25,17 +25,17 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 			time_stat* new = (time_stat*) malloc(sizeof(time_stat));
 		
 			init_time_stat(new);
-			new->ts = pkt->timestamp/TIME_GRANULARITY;
+			new->ts = (int)pkt->timestamp/TIME_GRANULARITY;
 		
 			// Link it
 			t->next = new;
 			t->last = new;
-		} else if ( pkt->timestamp / TIME_GRANULARITY > t->last->ts ) {
+		} else if ( (int)pkt->timestamp / TIME_GRANULARITY > t->last->ts ) {
 			/* Time is flowing, I need a new structure */
 			time_stat* new = (time_stat*) malloc(sizeof(time_stat));
 		
 			init_time_stat(new);
-			new->ts = pkt->timestamp/TIME_GRANULARITY;;
+			new->ts = (int)pkt->timestamp/TIME_GRANULARITY;;
 		
 			// Link it
 			t->last->next = new;
@@ -111,12 +111,11 @@ int print_time(time_stat *t, char * nome) {
 
 void print_time_flow(time_stat *t, int flow) {
 	time_stat* to_print = t;
-	
-	/* Add zero in statistics */
+	/* Add zeros in statistics */
 	u_long i=0;
-	while ( to_print != NULL ) {
-		if ( to_print->ts == i ) {
-			fprintf(ft[flow], "%lu %ld %d\n", to_print->ts, to_print->size[flow]/1024, to_print->pkt[flow]);
+	while ( i <= t->last->ts ) {
+		if ( to_print->ts <= i ) {
+			fprintf(ft[flow], "%d %ld %d\n", to_print->ts, to_print->size[flow]/1024, to_print->pkt[flow]);
 			to_print = to_print->next;
 		} else {
 			fprintf(ft[flow], "%lu 0 0\n", i);
@@ -128,6 +127,6 @@ void print_time_flow(time_stat *t, int flow) {
 	return;
 }
 
-long timeval_difference(struct timeval a, struct timeval b) {
-	return ((a.tv_sec - b.tv_sec)*1000000 + a.tv_usec - b.tv_usec)/1000000;
+int timeval_difference(struct timeval a, struct timeval b) {
+	return (a.tv_sec - b.tv_sec) + (a.tv_usec - b.tv_usec)/1000000;
 }

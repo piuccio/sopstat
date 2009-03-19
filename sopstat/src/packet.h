@@ -9,11 +9,11 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-/* long: 20, int: 10*2, short: 5*5, blank: 1*6 +margin :P */
-#define MAX_SERIALIZATION 80 
+/* int: 10*3, short: 5*5, blank: 1*6 +margin :P */
+#define MAX_SERIALIZATION 70 
 
 typedef struct packet_stat {
-	u_long timestamp; /* Unix time of the packet arrival */
+	int timestamp; /* Unix time of the packet arrival */
 	u_short wirelen; /* Length of the packet on the wire (all headers) */
 	u_int src; /* IP source */
 	u_int dst; /* IP destination */
