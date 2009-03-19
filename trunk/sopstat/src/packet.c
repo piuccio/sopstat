@@ -3,11 +3,10 @@
 #include <string.h>
 #include "constants.h"
 #include "packet.h"
+#include "time.h"
 
 boolean first_packet = true;
-u_long first_timestamp = 0;
-u_long last_timestamp_tcp = 0, last_timestamp_udp = 0;;
-u_int last_length_tcp = 0, last_length_udp = 0;
+struct timeval first_timestamp;
 
 /**
  * Extract all the useful informartions from the packet and return
@@ -17,15 +16,13 @@ u_int last_length_tcp = 0, last_length_udp = 0;
 boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header, const u_char *packet) {
         /* Structure for the relevant informations */
         int valid = false;
+        if ( first_packet ) {
+			/* This is the first packet, scale the time */
+			first_timestamp = header->ts;
+		}
         
-        #ifdef DEBUG
-			printf("Header \n");
-			printf("\t[timestamp]:%ld.%ld ", header->ts.tv_sec, header->ts.tv_usec);
-			printf("\n\t[caplen]:%d \n\t[wirelen]:%d \n", header->caplen, header->len);
-		#endif
-		
 		/* Measures on timestamp and length */
-		stat->timestamp = header->ts.tv_sec - first_timestamp;
+		stat->timestamp = timeval_difference(header->ts, first_timestamp) / PACKET_GRANULARITY;
 		stat->wirelen = header->len;
 		
 		/* I assume that all packets are ethernet */
@@ -40,47 +37,18 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
         #endif
         
         /* Read the ethernet payload */
-        switch( ntohs(ethernet->ether_type) ) {
-        	case ETHERTYPE_ARP:
-        		#ifdef DEBUG
-        		printf("ARP\n");
-        		#endif
-        		//Up to now I simply discard ARP packets in my statistics
-        		break;
-        	case ETHERTYPE_IP:
-        		valid = parse_ip( (u_char*)(packet + SIZE_ETHERNET), stat );
-        		break;
-        	default:
+        if ( ntohs(ethernet->ether_type) == ETHERTYPE_IP ) {
+			valid = parse_ip( (u_char*)(packet + SIZE_ETHERNET), stat );
+        } else {
+        	#ifdef DEBUG
         		printf("Unrecognized packet at time %ld.%ld\n", header->ts.tv_sec, header->ts.tv_usec);
-        		break;
+        	#endif
         }
         
 		/* All the packet informations are collected */
-		if ( valid ) {
-			if ( first_packet ) {
-				/* This is the first packet, scale the time */
-				first_timestamp = stat->timestamp;
-				stat->timestamp = 0;
-				first_packet = false;
-			}
-			
-			/* Store some values for the aggregated measures */
-			switch ( stat->proto ) {
-				case IPPROTO_TCP:
-					//Aggregate
-					stat->alen = ( last_timestamp_tcp == stat->timestamp ) ? last_length_tcp + stat->wirelen : stat->wirelen;
-					last_length_tcp = stat->alen;
-					last_timestamp_tcp = stat->timestamp;
-					break;
-				case IPPROTO_UDP:
-					stat->alen = ( last_timestamp_udp == stat->timestamp ) ? last_length_udp + stat->wirelen : stat->wirelen;
-					last_length_udp = stat->alen;
-					last_timestamp_udp = stat->timestamp;
-					break;
-				default:
-					//Why am I here ??
-					break;
-			}
+		if ( valid && first_packet ) {
+			/* Scale the time */
+			first_packet = false;
 		}
 		
         return valid;
@@ -251,12 +219,12 @@ boolean stoip(u_int *ip, char* str) {
  */
 void serialize_packet(const struct packet_stat *pkt, char *str) {
 	/* FORMAT (gnuplot)
-	 * timestamp wirelen ip_src ip_dst iplen src_p dst_p proto ttl
+	 * timestamp wirelen ip_src ip_dst iplen src_p dst_p proto
 	 */
 	char src[MAX_IP_ADDR], dst[MAX_IP_ADDR];
 	iptos( pkt->src, src);
 	iptos( pkt->dst, dst);
-	sprintf(str, "%lu %u %s %s %u %hu %hu %hu %hu %u", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto, pkt->ttl, pkt->alen);
+	sprintf(str, "%lu %u %s %s %u %hu %hu %hu", pkt->timestamp, pkt->wirelen, src, dst, pkt->iplen, pkt->src_p, pkt->dst_p, pkt->proto);
 }
 
 /**
@@ -272,6 +240,5 @@ void statcopy(packet_stat *dst, packet_stat *src) {
 	dst->src_p = src->src_p;
 	dst->dst_p = src->dst_p;
 	dst->iplen = src->iplen;
-	dst->alen = src->alen;
 	dst->next = NULL;
 }

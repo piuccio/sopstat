@@ -29,6 +29,7 @@
 #include "constants.h"
 #include "packet.h"
 #include "liste.h"
+#include "time.h"
 
 /* Prototypes */
 void usage(void);
@@ -42,6 +43,9 @@ u_int local_ip; /* hexadecimal form, should be easier to compare */
 ipnode* tree;
 long num_pkt=0;
 int i;
+
+/* Time dimension */
+time_stat* timestamp; 
 
 int main(int argc, char* argv[]) {
 		 
@@ -79,28 +83,36 @@ int main(int argc, char* argv[]) {
         } else {
 			tree->next=NULL;
 			tree->ip=0;
-			for (i=0; i<4; i++) {
+			for (i=0; i<FLOWS; i++) {
 				tree->first[i] = NULL;
 				tree->last[i] = NULL;
 			}
         }
+        /* Initialize the time */
+        timestamp = (time_stat*) malloc (sizeof(time_stat));
+        if (timestamp == NULL ) {
+        	printf("[ERROR] Unable to allocate memory for the timestamp");
+        	return MALLOC_ERROR;
+        }
+        init_time_stat(timestamp);
+        
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
 		
 		/* Check if there is the 4th parameter that changes the time granularity */
-        if ( false ) {
-        	u_char aux [] = "pippo";
-        	pcap_loop(handle, -1, populate_tree, aux);
-        } else {
-        	pcap_loop(handle, -1, populate_tree, NULL);
-        }
+        pcap_loop(handle, -1, populate_tree, NULL);
 		
 		/* And close the session */
         pcap_close(handle);
 	
 		/* Print the tree */
 		if ( print(tree, argv[2]) != 0) {
+			return INVALID_FOLDER;
+		}
+		
+		/* Print the time */
+		if ( print_time(timestamp, argv[2]) != 0 ) {
 			return INVALID_FOLDER;
 		}
 		
@@ -135,16 +147,24 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	/* Output something to show that the program is not crashed :P */
 	num_pkt++;
 	if (num_pkt % 1000 == 0) {
-		printf(".");
-		fflush(stdout);
+		if (num_pkt % 100000 == 0) {
+			printf("+\n");
+			fflush(stdout);
+		} else {
+			printf(".");
+			fflush(stdout);
+		}
 	}
 	
-	/* This is a valid packet, store it in the tree */
+	/* This is a valid packet, store it in the packet tree */
 	//The host node must be different from local_ip
 	u_int host;
 	host = (stat.src == local_ip) ? stat.dst : stat.src;
 	direction dir = (stat.src == local_ip) ? upstream : downstream;
 	insert_node(tree, host, &stat, dir);
+	
+	/* Store it also in the time dimension */
+	register_packet(timestamp, &stat, dir);
 }
 
 

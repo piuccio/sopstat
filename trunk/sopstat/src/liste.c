@@ -36,7 +36,7 @@
  * - pkt : statistics for the packet
  * - flow : udp/tcp up/dw flow
  */
-FILE* f[FLOWS]; 
+FILE* f[FLOWS];
 
 void insert_stat(ipnode *n, packet_stat *pkt, int flow) {
 	if ( n->last[flow] != NULL ) {
@@ -184,7 +184,7 @@ void print_flow(ipnode* n, int flow) {
 	/* Is there something to print ? */
 	if ( n->first[flow] != NULL ) {
 		/* File comments */
-		fprintf(f[flow], "#%s\n", n->address);
+		fprintf(f[flow], "#%s, %ld packets\n", n->address, n->num[flow]);
 	
 		char to_print[MAX_SERIALIZATION];
 	
