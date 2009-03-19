@@ -30,197 +30,178 @@
 
 /**
  * Insert a statistic packet inside a list
+ * 
+ * Params
+ * - n : ipnode, the current host
+ * - pkt : statistics for the packet
+ * - flow : udp/tcp up/dw flow
  */
-FILE* f[MAX_OPEN_FILES]; 
-char ip[MAX_IP_ADDR];
-void insert_stat(packet_stat *n, packet_stat *pkt) {
-		if (n->next != NULL) {
-			insert_stat(n->next, pkt);
-		} else {
-			//printf("    - New node inserted\n");
-			packet_stat* last = (packet_stat*) malloc (sizeof(packet_stat));
-			statcopy(last, pkt);
-			n->next = last;
-		}
-		return;
+FILE* f[FLOWS]; 
+
+void insert_stat(ipnode *n, packet_stat *pkt, int flow) {
+	if ( n->last[flow] != NULL ) {
+		//Something is already here
+		packet_stat* new = (packet_stat*) malloc (sizeof(packet_stat));
+		statcopy(new, pkt);
+		
+		//Add to the chain
+		n->last[flow]->next = new;
+		//Update the last in ipnode
+		n->last[flow] = new;
+	} else {
+		//This is the first stat
+		packet_stat* new = (packet_stat*) malloc (sizeof(packet_stat));
+		statcopy(new, pkt);
+		
+		n->first[flow] = (packet_stat*) malloc (sizeof(packet_stat));
+		n->last[flow] = (packet_stat*) malloc (sizeof(packet_stat));
+		n->first[flow] = new;
+		n->last[flow] = new;
+	}
+	
+	/* Update the aggregate stats */
+	n->alen[flow] += pkt->iplen;
+	n->num[flow] += 1;
+	
+	return;
 }
 
 /**
  * Insert a new node inside the structure
  * 
  * First look if the ip already exists, otherwise it creates a new one
- * and insert the passed node, containing the collected statistics  
+ * and insert the passed node, containing the collected statistics
+ * 
+ * Params
+ * - n : node, pointer to the tree
+ * - hostip : IP address of the other party in the communication
+ * - pkt : statistics for the packet that must be stored
+ * - direction : upstream / downstream    
  */
 void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
-	//printf("check IP: %x contro %x\n",n->ip, hostip);
-	if ( n->ip == hostip ){
-		/* Node existing */
-		//printf("Trovato nodo uguale!!! %x %x", n->ip, hostip);
-		if (dir == upstream) 
-			if (pkt->proto == IPPROTO_TCP) // Insert in upTCP
-			    insert_stat(n->upTCP, pkt);
-			else  insert_stat(n->upUDP, pkt);  //Insert in upUDP
-		else
-		    if (pkt->proto == IPPROTO_TCP) insert_stat(n->dwTCP, pkt); // Insert in dwTCP
-			else   insert_stat(n->dwUDP, pkt);//Insert in dwUDP    
+	if ( (n->ip == hostip) || (n->ip == 0)){
+		//This is can be the first element of the tree
+		if ( n->ip == 0 ) {
+			int i;
+			for (i=0; i<FLOWS; i++) {
+				n->first[i] = NULL;
+			    n->last[i] = NULL;
+			    n->alen[i] = 0;
+			    n->num[i] = 0;
+			}
+			n->ip = hostip;
+			iptos(hostip, n->address);
+			n->next = NULL;
+		}
 		
-		//insert_stat(n->first, pkt);
+		//Insert the stat in the correct place
+		int flow;
+		if (dir == upstream) {
+			flow = (pkt->proto == IPPROTO_TCP) ? tcpUP : udpUP;
+		} else {
+		    flow = (pkt->proto == IPPROTO_TCP) ? tcpDW : udpDW;
+		}
+		
+		insert_stat(n, pkt, flow);
+		
 	} else if (n->next != NULL){
 		/* Iterate on next host. Recursive call */
 		insert_node(n->next, hostip, pkt, dir);
   	} else {
 		/* Create a new ip node */
 		ipnode* last = (ipnode*) malloc (sizeof(ipnode));
-		//printf("   Create new IP node %x %x \n", n->ip, hostip);
-		last->ip = hostip;
-		last->next = NULL;
-		/* Add the packet stat to the first node */
-		last->dwTCP = (packet_stat*) malloc (sizeof(packet_stat));
-		last->dwUDP = (packet_stat*) malloc (sizeof(packet_stat));
-		last->upTCP = (packet_stat*) malloc (sizeof(packet_stat));
-		last->upUDP = (packet_stat*) malloc (sizeof(packet_stat));
-		n->next = last;  
-		// Insert the node in the right place 
-		if (dir == upstream) 
-			if (pkt->proto == IPPROTO_TCP) // Insert in upTCP
-			    insert_stat(last->upTCP, pkt);
-			else  insert_stat(last->upUDP, pkt);  //Insert in upUDP
-		else
-		    if (pkt->proto == IPPROTO_TCP) insert_stat(last->dwTCP, pkt); // Insert in dwTCP
-		    	 //printf("\n !!!!!!!!!! Insert dwTCP !!!!!!!!!! \n"); 
-			else   insert_stat(last->dwUDP, pkt);//Insert in dwUDP    
 		
-		/*
-		statcopy(last->first, pkt);
-		 Link it in the tree */
+		last->ip = hostip;
+		iptos(hostip, last->address);
+		last->next = NULL;
+		int i;
+		for (i=0; i<FLOWS; i++) {
+			last->first[i] = NULL;
+			last->last[i] = NULL;
+			last->alen[i] = 0;
+		}
+		
+		/* Add the packet stat to the first node */
+		n->next = last;  
+		//Insert the stat in the correct place
+		int flow;
+		if (dir == upstream) {
+			flow = (pkt->proto == IPPROTO_TCP) ? tcpUP : udpUP;
+		} else {
+		    flow = (pkt->proto == IPPROTO_TCP) ? tcpDW : udpDW;
+		}
+		
+		insert_stat(last, pkt, flow);
 		
 	}
 	return;
 }
 
 int print(ipnode *n, char * nome){
+	int i;
 	
 	char fname[FILENAME_MAX];
-	 sprintf(fname, "%s/distribution_dwtcp.dat", nome);
-        f[PKT_DISTR_dwTCP] = fopen(fname, "w");
-        if (f[PKT_DISTR_dwTCP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-			return INVALID_FOLDER;
-        }
-        //packet level statistics UDP
-        sprintf(fname, "%s/distribution_dwudp.dat", nome);
-        f[PKT_DISTR_dwUDP] = fopen(fname, "w");
-        if (f[PKT_DISTR_dwUDP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-        	fclose(f[PKT_DISTR_dwTCP]);
-			return INVALID_FOLDER;
-        }
-        sprintf(fname, "%s/distribution_uptcp.dat", nome);
-        f[PKT_DISTR_upTCP] = fopen(fname, "w");
-        if (f[PKT_DISTR_upTCP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-        	fclose(f[PKT_DISTR_upTCP]);
-			return INVALID_FOLDER;
-        }
-        sprintf(fname, "%s/distribution_upudp.dat", nome);
-        f[PKT_DISTR_upUDP] = fopen(fname, "w");
-        if (f[PKT_DISTR_upUDP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-        	fclose(f[PKT_DISTR_dwTCP]);
-			return INVALID_FOLDER;
-        }
-	//printf("printdwTCP: \n");
-	printdwTCP(n->next);
-	//printf("finish");
-	//printf("printupTCP: \n");
-	printupTCP(n->next);
-	//printf("printdwUDP: \n");
-	printdwUDP(n->next);
-	//printf("printupUDP: \n");
-	printupUDP(n->next);
-	int fileind;
-	for (fileind=0 ; fileind<MAX_OPEN_FILES-1; fileind++)
-	  fclose(f[fileind]);
+	sprintf(fname, "%s/upudp.dat", nome);
+	f[udpUP] = fopen(fname, "w");
+	if (f[udpUP] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		return INVALID_FOLDER;
+	}
+	sprintf(fname, "%s/dwudp.dat", nome);
+	f[udpDW] = fopen(fname, "w");
+	if (f[udpDW] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(f[udpUP]);
+		return INVALID_FOLDER;
+	}
+	sprintf(fname, "%s/uptcp.dat", nome);
+	f[tcpUP] = fopen(fname, "w");
+	if (f[tcpUP] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(f[udpUP]);
+		fclose(f[udpDW]);
+		return INVALID_FOLDER;
+	}
+	sprintf(fname, "%s/dwtcp.dat", nome);
+	f[tcpDW] = fopen(fname, "w");
+	if (f[tcpDW] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(f[udpUP]);
+		fclose(f[udpDW]);
+		fclose(f[tcpUP]);
+		return INVALID_FOLDER;
+	}
+	
+	for (i=0; i<FLOWS; i++) {
+		print_flow(n, i);
+		fclose( f[i] );
+	}
+	
 	return 0;	
 }
 
-void printdwTCP(ipnode* n){
-	char to_print[MAX_SERIALIZATION];
-	//char ip[MAX_IP_ADDR];
-	if (n != NULL) {
-	  iptos(n->ip, ip);
-	  //printf("\n#%s\n", ip) ;
-	  fprintf(f[PKT_DISTR_dwTCP],"\n#%s\n", ip) ;
-	}
-	if (n != NULL) {
-		packet_stat * tmp = n->dwTCP->next;
-		while (tmp != NULL) {
-			serialize_packet(tmp, to_print);
-			//printf("%s\n",to_print);
-			fprintf(f[PKT_DISTR_dwTCP],"%s\n", to_print);
-			tmp = tmp->next;
-		}
-		if (n->next != NULL);
-			printdwTCP(n->next);
-		}
-	return;
-}
-
-void printupTCP(ipnode* n){
-	char to_print[MAX_SERIALIZATION];
-	char ip[MAX_IP_ADDR];
-	if (n!=NULL){
-	iptos(n->ip, ip);
-	fprintf(f[PKT_DISTR_upTCP],"\n#%s\n", ip) ;}
-	if (n != NULL) {
-		packet_stat * tmp = n->upTCP->next;
+void print_flow(ipnode* n, int flow) {
+	/* Is there something to print ? */
+	if ( n->first[flow] != NULL ) {
+		/* File comments */
+		fprintf(f[flow], "#%s\n", n->address);
+	
+		char to_print[MAX_SERIALIZATION];
+	
+		packet_stat* p = n->first[flow];
+		while ( p != NULL ) {
+			serialize_packet(p, to_print);
+			fprintf(f[flow], "%s\n", to_print);
 		
-		while (tmp != NULL) {
-			serialize_packet(tmp, to_print);
-			fprintf(f[PKT_DISTR_upTCP],"%s\n", to_print);
-			tmp = tmp->next;
+			p = p->next;
 		}
-		if (n->next != NULL);
-			printupTCP(n->next);
-		}
-	return;
-}
-
-void printdwUDP(ipnode* n){
-	char to_print[MAX_SERIALIZATION];
-	char ip[MAX_IP_ADDR];
-	if (n!=NULL) {
-	iptos(n->ip, ip);
-	fprintf(f[PKT_DISTR_dwUDP],"\n#%s\n", ip) ;}
-	if (n != NULL) {
-		packet_stat * tmp = n->dwUDP->next;
-		while (tmp != NULL) {
-			serialize_packet(tmp, to_print);
-			fprintf(f[PKT_DISTR_dwUDP],"%s\n", to_print);
-			//printf("%s\n", to_print);
-			tmp = tmp->next;
-		}
-		if (n->next != NULL);
-			printdwUDP(n->next);
-		}
-	return;
-}
-
-void printupUDP(ipnode* n){
-	char to_print[MAX_SERIALIZATION];
-	char ip[MAX_IP_ADDR];
-	if (n!=NULL){
-	iptos(n->ip, ip);
-	fprintf(f[PKT_DISTR_upUDP],"\n#%s\n", ip) ;}
-	if (n != NULL) {
-		packet_stat * tmp = n->upUDP->next;
-		while (tmp != NULL) {
-			serialize_packet(tmp, to_print);
-			fprintf(f[PKT_DISTR_upUDP],"%s\n", to_print);
-			tmp = tmp->next;
-		}
-		if (n->next != NULL);
-			printupUDP(n->next);
-		}
+	
+		fprintf(f[flow], "\n");
+	}
+	
+	/* Iterate */
+	if ( n->next != NULL ) {
+		print_flow(n->next, flow);
+	}
 	return;
 }
