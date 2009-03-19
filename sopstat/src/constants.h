@@ -19,13 +19,15 @@ typedef enum {false, true} boolean;
  #define MAX_IP_ADDR 16
  
 /**
- * FILES
+ * Short names
  */
- #define MAX_OPEN_FILES 5
- #define PKT_DISTR_dwTCP 0
- #define PKT_DISTR_dwUDP 1
- #define PKT_DISTR_upTCP 2
- #define PKT_DISTR_upUDP 3
+ #define udpUP 0
+ #define udpDW 1
+ #define tcpUP 2
+ #define tcpDW 3
+ 
+ 
+ #define FLOWS 4
  
  #define TIME_STAT 2
  

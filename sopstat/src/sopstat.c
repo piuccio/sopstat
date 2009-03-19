@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pcap.h>
+#include <time.h>
 #include "constants.h"
 #include "packet.h"
 #include "liste.h"
@@ -40,8 +41,10 @@ u_int local_ip; /* hexadecimal form, should be easier to compare */
 /* List of packets */
 ipnode* tree;
 long num_pkt=0;
+int i;
 
 int main(int argc, char* argv[]) {
+		 
         pcap_t *handle;
         char errbuf[PCAP_ERRBUF_SIZE];
         
@@ -73,33 +76,14 @@ int main(int argc, char* argv[]) {
         if (tree == NULL) {
         	printf("[ERROR] Unable to allocate memory for the tree");
         	return MALLOC_ERROR;
+        } else {
+			tree->next=NULL;
+			tree->ip=0;
+			for (i=0; i<4; i++) {
+				tree->first[i] = NULL;
+				tree->last[i] = NULL;
+			}
         }
-		tree->next=NULL;
-		tree->dwTCP=NULL;
-		tree->dwUDP=NULL;
-		tree->upTCP=NULL;
-		tree->upUDP=NULL;
-		
-        /* Try to access the output path */
-        //packet level statistics TCP
-        
-        /*
-        sprintf(fname, "%s/distribution_tcp.dat", argv[2]);
-        f[PKT_DISTR_TCP] = fopen(fname, "w");
-        if (f[PKT_DISTR_TCP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-			return INVALID_FOLDER;
-        }
-        //packet level statistics UDP
-        sprintf(fname, "%s/distribution_udp.dat", argv[2]);
-        f[PKT_DISTR_UDP] = fopen(fname, "w");
-        if (f[PKT_DISTR_UDP] == NULL) {
-        	printf("[ERROR] Unable to create %s\n", fname);
-        	fclose(f[PKT_DISTR_TCP]);
-			return INVALID_FOLDER;
-        }
-        
-        */
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
@@ -114,15 +98,14 @@ int main(int argc, char* argv[]) {
 		
 		/* And close the session */
         pcap_close(handle);
-        //fclose(f[PKT_DISTR_TCP]);
-        //fclose(f[PKT_DISTR_UDP]);
 	
 		/* Print the tree */
-		// Remember!!! handle return error!!
-		print(tree, argv[2]);
+		if ( print(tree, argv[2]) != 0) {
+			return INVALID_FOLDER;
+		}
 		
 		printf("\nOperation completed successfully\n");
-		printf("%ld packet analyzed\n", num_pkt);
+		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
         return NO_ERROR; 
 }
 
@@ -161,26 +144,7 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	u_int host;
 	host = (stat.src == local_ip) ? stat.dst : stat.src;
 	direction dir = (stat.src == local_ip) ? upstream : downstream;
-	char iptest[16];
-	iptos(stat.src,iptest);
-	//printf("---Insert node direction: %d, protocol: %d, source: %s\n", dir, stat.proto, iptest);
 	insert_node(tree, host, &stat, dir);
-	//printf("<<< Inserito un nuovo nodo: %x \n", ntohs(tree->next->ip));
-	/* And output to file */
-	char serial[MAX_SERIALIZATION];
-	serialize_packet( &stat, serial );
-	/* Write in the packet level stats according to the type */
-	switch( stat.proto ) {
-        case IPPROTO_TCP:
-			//fprintf(f[PKT_DISTR_TCP], "%s\n", serial);
-			break;
-		case IPPROTO_UDP:
-			//fprintf(f[PKT_DISTR_UDP], "%s\n", serial);
-			break;
-		default:
-			printf("\nError in protocol representation\n");
-			break;
-	}
 }
 
 
