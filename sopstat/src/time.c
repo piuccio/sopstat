@@ -7,7 +7,7 @@ FILE* ft[FLOWS];
  * Parse the information of a packet
  */
 void register_packet(time_stat *t, packet_stat *pkt, int direction) {
-	if ( t->ts / TIME_GRANULARITY == pkt->timestamp / PACKET_GRANULARITY) {
+	if ( pkt->timestamp / TIME_GRANULARITY == t->ts ) {
 		/* This packet goes here */
 		int flow;
 		if (direction == upstream) {
@@ -25,17 +25,17 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 			time_stat* new = (time_stat*) malloc(sizeof(time_stat));
 		
 			init_time_stat(new);
-			new->ts = pkt->timestamp*PACKET_GRANULARITY/TIME_GRANULARITY;
+			new->ts = pkt->timestamp/TIME_GRANULARITY;
 		
 			// Link it
 			t->next = new;
 			t->last = new;
-		} else if ( t->last->ts * TIME_GRANULARITY < pkt->timestamp * PACKET_GRANULARITY) {
+		} else if ( pkt->timestamp / TIME_GRANULARITY > t->last->ts ) {
 			/* Time is flowing, I need a new structure */
 			time_stat* new = (time_stat*) malloc(sizeof(time_stat));
 		
 			init_time_stat(new);
-			new->ts = pkt->timestamp*PACKET_GRANULARITY/TIME_GRANULARITY;;
+			new->ts = pkt->timestamp/TIME_GRANULARITY;;
 		
 			// Link it
 			t->last->next = new;
@@ -69,6 +69,8 @@ int print_time(time_stat *t, char * nome) {
 		printf("[ERROR] Unable to create %s\n", fname);
 		return INVALID_FOLDER;
 	}
+	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets]\n");
+	
 	sprintf(fname, "%s/time_dwudp.dat", nome);
 	ft[udpDW] = fopen(fname, "w");
 	if (ft[udpDW] == NULL) {
@@ -76,6 +78,8 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpUP]);
 		return INVALID_FOLDER;
 	}
+	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets]\n");
+	
 	sprintf(fname, "%s/time_uptcp.dat", nome);
 	ft[tcpUP] = fopen(fname, "w");
 	if (ft[tcpUP] == NULL) {
@@ -84,6 +88,8 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpDW]);
 		return INVALID_FOLDER;
 	}
+	fprintf(ft[tcpUP], "#[timesample] [size in kB] [number of packets]\n");
+	
 	sprintf(fname, "%s/time_dwtcp.dat", nome);
 	ft[tcpDW] = fopen(fname, "w");
 	if (ft[tcpDW] == NULL) {
@@ -93,6 +99,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[tcpUP]);
 		return INVALID_FOLDER;
 	}
+	fprintf(ft[tcpDW], "#[timesample] [size in kB] [number of packets]\n");
 	
 	for (i=0; i<FLOWS; i++) {
 		print_time_flow(t, i);
@@ -105,12 +112,17 @@ int print_time(time_stat *t, char * nome) {
 void print_time_flow(time_stat *t, int flow) {
 	time_stat* to_print = t;
 	
+	/* Add zero in statistics */
+	u_long i=0;
 	while ( to_print != NULL ) {
-		if ( to_print->pkt[flow] > 0 ) {
-			fprintf(ft[flow], "%lu %ld %d\n", to_print->ts, to_print->size[flow], to_print->pkt[flow]);
+		if ( to_print->ts == i ) {
+			fprintf(ft[flow], "%lu %ld %d\n", to_print->ts, to_print->size[flow]/1024, to_print->pkt[flow]);
+			to_print = to_print->next;
+		} else {
+			fprintf(ft[flow], "%lu 0 0\n", i);
 		}
 		
-		to_print = to_print->next;
+		i++;
 	}
 	
 	return;
