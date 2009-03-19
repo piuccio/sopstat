@@ -22,7 +22,7 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
 		}
         
 		/* Measures on timestamp and length */
-		stat->timestamp = timeval_difference(header->ts, first_timestamp) / PACKET_GRANULARITY;
+		stat->timestamp = timeval_difference(header->ts, first_timestamp);
 		stat->wirelen = header->len;
 		
 		/* I assume that all packets are ethernet */
