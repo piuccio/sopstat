@@ -17,12 +17,11 @@ typedef struct packet_stat {
 	u_short wirelen; /* Length of the packet on the wire (all headers) */
 	u_int src; /* IP source */
 	u_int dst; /* IP destination */
-	u_short ttl; /* Time to live */
 	u_short proto; /* IP protocol field: TCP/UDP */
 	u_short src_p; /* Source port */
 	u_short dst_p; /* Destination port */
 	u_short iplen; /* Length of the IP payload */
-	u_int alen; /* Aggregated length, sum of sizes of packet in that time interval */
+	struct timeval real_ts; /* The real timestamp in microseconds */
 	struct packet_stat* next; /* Next pointer for the list */
 } packet_stat;
 

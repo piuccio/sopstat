@@ -130,3 +130,12 @@ void print_time_flow(time_stat *t, int flow) {
 int timeval_difference(struct timeval a, struct timeval b) {
 	return (a.tv_sec - b.tv_sec) + (a.tv_usec - b.tv_usec)/1000000;
 }
+
+/* Is a bigger than b ? */
+boolean timeval_bigger(struct timeval a, struct timeval b) {
+	if ( a.tv_sec == b.tv_sec ) {
+		return (a.tv_usec > b.tv_usec) ? true : false;
+	}
+	
+	return (a.tv_sec > b.tv_sec) ? true : false;
+}

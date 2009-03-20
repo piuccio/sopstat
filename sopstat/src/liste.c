@@ -205,3 +205,56 @@ void print_flow(ipnode* n, int flow) {
 	}
 	return;
 }
+
+/* Print the udp payload of the communication between two hosts */ 
+int dump_udp_payload(ipnode* n, u_int ip) {
+	/* Find the host in the list */
+	if ( n->ip == ip ){
+		/* HERE !! */
+		printf("[P] Trovato %s\n", n->address);
+		
+		packet_stat* up = (packet_stat*) malloc(sizeof(packet_stat));
+		packet_stat* dw = (packet_stat*) malloc(sizeof(packet_stat));
+		up = n->first[udpUP];
+		dw = n->first[udpDW];
+		
+		while (up != NULL) {
+			/* Print everything until I reach the last udp pkt */
+			if ( timeval_bigger(up->real_ts, dw->real_ts) ) {
+				/* Download comes first */
+				printf("Download %d\n", dw->timestamp);
+				if ( dw->next == NULL) {
+					/* Download is over, break the cycle */
+					break;
+				} else {
+					dw = dw->next;
+				}
+			} else {
+				printf("Upload %d\n", up->timestamp);
+				if ( up->next == NULL ) {
+					/* This is the last udp packet, dump remaining dw */
+					while ( dw != NULL ) {
+						printf("Download %d\n", dw->timestamp);
+						dw = dw->next;
+					}
+				}
+				up = up->next;
+			}
+		}
+		
+		/* There is some upload to print */
+		while ( up != NULL ) {
+			printf("Upload %d\n", up->timestamp);
+			up = up->next;
+		}
+		
+	} else if (n->next != NULL){
+		/* Iterate on next host. Recursive call */
+		dump_udp_payload(n->next, ip);
+  	} else {
+		/* Wrong IP ? */
+		printf("[ERROR] Remote address not found\n");
+		return INVALID_IP;
+	}
+	return NO_ERROR;
+}
