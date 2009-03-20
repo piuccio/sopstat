@@ -23,6 +23,7 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
         
 		/* Measures on timestamp and length */
 		stat->timestamp = timeval_difference(header->ts, first_timestamp);
+		stat->real_ts = header->ts;
 		stat->wirelen = header->len;
 		
 		/* I assume that all packets are ethernet */
@@ -86,7 +87,6 @@ boolean parse_ip(const u_char *packet, struct packet_stat *stat) {
 	/* Save some IP informations */
 	stat->src = ntohl(datagram->ip_src.s_addr);
 	stat->dst = ntohl(datagram->ip_dst.s_addr);
-	stat->ttl = datagram->ip_ttl;
 	stat->proto = datagram->ip_p;
 	stat->iplen = ntohs(datagram->ip_len) - (datagram->ip_hl * 4);
 	
@@ -235,10 +235,10 @@ void statcopy(packet_stat *dst, packet_stat *src) {
 	dst->wirelen = src->wirelen;
 	dst->src = src->src;
 	dst->dst = src->dst;
-	dst->ttl = src->ttl;
 	dst->proto = src->proto;
 	dst->src_p = src->src_p;
 	dst->dst_p = src->dst_p;
 	dst->iplen = src->iplen;
+	dst->real_ts = src->real_ts;
 	dst->next = NULL;
 }

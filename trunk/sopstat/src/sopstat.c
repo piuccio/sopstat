@@ -68,12 +68,9 @@ int main(int argc, char* argv[]) {
         /* Take the local IP */
         if ( stoip(&local_ip, argv[3]) == false ) {
         	//Unable to convert the IP, this is not valid
-        	printf("[ERROR] Invalid IP address %s\n", argv[3]);
+        	printf("[ERROR] Invalid local IP address %s\n", argv[3]);
         	return INVALID_IP;
         }
-        #ifdef DEBUG
-        	printf("Local IP address: %#x\n", local_ip);
-        #endif
         
         /* Initialize the tree */
         tree = (ipnode*) malloc (sizeof(ipnode));
@@ -107,13 +104,25 @@ int main(int argc, char* argv[]) {
         pcap_close(handle);
 	
 		/* Print the tree */
-		if ( print(tree, argv[2]) != 0) {
+		if ( print(tree, argv[2]) != NO_ERROR ) {
 			return INVALID_FOLDER;
 		}
 		
 		/* Print the time */
-		if ( print_time(timestamp, argv[2]) != 0 ) {
+		if ( print_time(timestamp, argv[2]) != NO_ERROR ) {
 			return INVALID_FOLDER;
+		}
+		
+		/* Dump the payload */
+		if ( argc > 4 ) {
+			u_int other_ip;
+			if ( !stoip(&other_ip, argv[4]) ) {
+				printf("[ERROR] Invalid remote IP address %s\n", argv[4]);
+				return INVALID_IP;
+			}
+			if ( dump_udp_payload(tree, other_ip) != NO_ERROR ) {
+				return INVALID_IP;
+			}
 		}
 		
 		printf("\nOperation completed successfully\n");
@@ -128,6 +137,7 @@ void usage(void) {
         printf("analysis must be filtered such that each packet involve one single host.\n");
         printf("\t- path_to_results is the folder where sopstat will generate the files containing the statistics\n");
         printf("\t- ip_address is the host that is generating or receiving the sopcast stream\n");
+        printf("\t- [ip_address] isolate a flow and dump the udp payload\n");
         printf("This software will output the statistics in the specified folder\n");
 }
 

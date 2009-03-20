@@ -6,6 +6,7 @@
 #include <string.h>
 #include "constants.h"
 #include "packet.h"
+#include "time.h"
 
 typedef struct ipnode {
    u_long ip;
@@ -21,5 +22,6 @@ void insert_stat(ipnode *, packet_stat *, int);
 void insert_node(ipnode* , u_int, packet_stat *, direction);
 int print(ipnode*, char * );
 void print_flow(ipnode* , int);
+int dump_udp_payload(ipnode* , u_int);
 
 #endif /*LISTE_H_*/

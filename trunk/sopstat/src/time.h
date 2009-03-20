@@ -21,6 +21,7 @@ void register_packet(time_stat *, packet_stat *, int);
 void init_time_stat(time_stat *);
 int print_time(time_stat *, char *);
 void print_time_flow(time_stat *, int);
-int timeval_difference(struct timeval a, struct timeval b);
+int timeval_difference(struct timeval, struct timeval);
+boolean timeval_bigger(struct timeval, struct timeval);
 
 #endif /*TIME_H_*/
