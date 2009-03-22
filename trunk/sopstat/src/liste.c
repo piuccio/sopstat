@@ -222,8 +222,6 @@ void print_flow(ipnode* n, int flow) {
 
 /* Print the udp payload of the communication between two hosts */ 
 void dump_udp_payload(ipnode* tree, FILE* f) {
-	int i;
-	
 	ipnode* n = tree;
 	while(n->next != NULL) {
 		fprintf(f, "#HOST %s (%#.8lx)\n", n->address, n->ip);
@@ -236,7 +234,7 @@ void dump_udp_payload(ipnode* tree, FILE* f) {
 		st = n->first[udp];
 		
 		while ( st != NULL ) {
-			fprintf(f,"%.2hx%.2hx %.2hx%.2hx %.8hx %.2hx%.2hx %.4hx\n", st->flag, st->id_peer, st->segments, st->id_stream, st->ts, st->type[0], st->type_flag[0], st->length[0]);
+			fprintf(f,"%.2hx%.2hx %.2hx%.2hx %.8x %.2hx%.2hx %.4hx\n", st->flag, st->id_peer, st->segments, st->id_stream, st->ts, st->type[0], st->type_flag[0], st->length[0]);
 			st = st->next;
 		}
 		

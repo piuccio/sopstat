@@ -5,8 +5,6 @@
 #include "constants.h"
 #include "packet.h"
 
-#define GRANULARITY 3
-
 typedef struct time_stat {
 	int ts; /* Relative timestamp */
 	long size[FLOWS]; /* aggragate IPlen size */

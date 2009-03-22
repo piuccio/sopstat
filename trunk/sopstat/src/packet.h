@@ -8,6 +8,7 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include "payload.h"
 
 /* int: 10*3, short: 5*5, blank: 1*6 +margin :P */
 #define MAX_SERIALIZATION 70 
@@ -31,7 +32,7 @@ typedef struct packet_stat {
 	/* Beginning of the segment, no more than 3 segs */
 	u_short type[3]; /* 1B Type of message */ 
 	u_short type_flag[3]; /* 1B Flag for the message type */
-	short length[3]; /* 2B Length of the segment */
+	u_short length[3]; /* 2B Length of the segment */
 	u_char payload[3][60]; /* Segment payload */
 	
 	struct packet_stat* next; /* Next pointer for the list */
@@ -44,11 +45,11 @@ typedef enum {upstream, downstream} direction;
 void serialize_packet(const struct packet_stat *, char *);
 void iptos(const u_int, char *);
 boolean stoip(u_int *, char*);
-boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char * );
-boolean parse_ip(const u_char *, struct packet_stat * );
+boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char *, payload_stat_container * );
+boolean parse_ip(const u_char *, struct packet_stat *, payload_stat_container * );
 void parse_tcp(const u_char *, struct packet_stat *);
-boolean parse_udp(const u_char *, struct packet_stat * );
+boolean parse_udp(const u_char *, struct packet_stat *, payload_stat_container * );
 void statcopy(packet_stat *, packet_stat *);
-void parse_sopcast(const u_char *, struct packet_stat *, int);
+void parse_sopcast(const u_char *, struct packet_stat *, int, payload_stat_container *);
 
 #endif /*PACKET_H_*/
