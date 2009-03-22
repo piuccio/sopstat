@@ -13,7 +13,7 @@ struct timeval first_timestamp;
  * TRUE  -> this is a valid packet
  * FALSE -> the packet is not relevant for the statistics
  */
-boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header, const u_char *packet) {
+boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header, const u_char *packet ) {
         /* Structure for the relevant informations */
         int valid = false;
         if ( first_packet ) {
@@ -30,22 +30,11 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
         const struct ether_header *ethernet; /* The ethernet header */
         ethernet = (struct ether_header*)(packet);
 
-        /* Serialize the Ethernet header structure */
-        #ifdef DEBUG
-        	printf("Ethernet Header \n\t[src addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_shost[0],ethernet->ether_shost[1],ethernet->ether_shost[2],ethernet->ether_shost[3],ethernet->ether_shost[4],ethernet->ether_shost[5]);
-        	printf("\t[dst addr]: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x \n", ethernet->ether_dhost[0], ethernet->ether_dhost[1], ethernet->ether_dhost[2], ethernet->ether_dhost[3], ethernet->ether_dhost[4], ethernet->ether_dhost[5]);
-        	printf("\t[type]: %#.4x \n", ntohs(ethernet->ether_type));
-        #endif
-        
-        /* Read the ethernet payload */
+        /* Read the Ethernet payload */
         if ( ntohs(ethernet->ether_type) == ETHERTYPE_IP ) {
 			valid = parse_ip( (u_char*)(packet + SIZE_ETHERNET), stat );
-        } else {
-        	#ifdef DEBUG
-        		printf("Unrecognized packet at time %ld.%ld\n", header->ts.tv_sec, header->ts.tv_usec);
-        	#endif
         }
-        
+
 		/* All the packet informations are collected */
 		if ( valid && first_packet ) {
 			/* Scale the time */
@@ -60,29 +49,9 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
  * TRUE   packet is meaningful for the statistics
  * FALSE  drop the packet
  */
-boolean parse_ip(const u_char *packet, struct packet_stat *stat) {
+boolean parse_ip(const u_char *packet, struct packet_stat *stat ) {
 	const struct ip *datagram; /* The IP header */
 	datagram = (struct ip*)(packet);
-	
-	#ifdef DEBUG
-		char src[MAX_IP_ADDR], dst[MAX_IP_ADDR];
-		printf("IP Header\n");
-		printf("\t[version]: %u\n", datagram->ip_v);
-		/* header lenght isin number of 32bit word, *4 byte */
-		printf("\t[header length]: %u byte\n", (datagram->ip_hl * 4) );
-		printf("\t[TOS]: 0x%hx\n", datagram->ip_tos);
-		printf("\t[total length]: %hu byte\n", ntohs(datagram->ip_len));
-		printf("\t[identification]: %#.4hx\n", ntohs(datagram->ip_id));
-		printf("\t[fragment]: %hu\n", ntohs(datagram->ip_off));
-		printf("\t[TTL]: %hu\n", datagram->ip_ttl);
-		printf("\t[protocol]: %hu\n", datagram->ip_p);
-		printf("\t[checksum]: %#.4hx\n", ntohs(datagram->ip_sum));
-		/* change the addresses representation */
-		iptos(ntohl(datagram->ip_src.s_addr), src);
-		printf("\t[source]: %s\n", src);
-		iptos(ntohl(datagram->ip_dst.s_addr), dst);
-		printf("\t[destination]: %s\n", dst);
-	#endif
 	
 	/* Save some IP informations */
 	stat->src = ntohl(datagram->ip_src.s_addr);
@@ -90,29 +59,25 @@ boolean parse_ip(const u_char *packet, struct packet_stat *stat) {
 	stat->proto = datagram->ip_p;
 	stat->iplen = ntohs(datagram->ip_len) - (datagram->ip_hl * 4);
 	
+	/* Simply discard fragmented packets, I loose the tail of large pkts */
+	if ( (datagram->ip_off & 0xff00) > 0 ) {
+		return false;
+	}
+	
 	/* Read the IP payload */
+	boolean valid = true;
 	switch( datagram->ip_p ) {
-        case IPPROTO_ICMP:
-        	#ifdef DEBUG
-        		printf("ICMP, dropping\n");
-        	#endif
-        	//I still have nothing to do with ICMP
-        	return false;
-       		break;
-       	case IPPROTO_TCP:
+        case IPPROTO_TCP:
         	parse_tcp( (u_char*)(packet + (datagram->ip_hl * 4)), stat );
         	break;
         case IPPROTO_UDP:
-        	parse_udp( (u_char*)(packet + (datagram->ip_hl * 4)), stat );
+        	valid = parse_udp( (u_char*)(packet + (datagram->ip_hl * 4)), stat );
         	break;
        	default:
-       		#ifdef DEBUG
-       			printf("Unrecognized packet, dropping\n");
-       		#endif
-       		return false;
+       		valid = false;
        		break;
 	}
-	return true;
+	return valid;
 }
 
 void parse_tcp(const u_char *packet, struct packet_stat *stat) {
@@ -122,34 +87,9 @@ void parse_tcp(const u_char *packet, struct packet_stat *stat) {
 	/* Save port information */
 	stat->src_p = ntohs(payload->source);
 	stat->dst_p = ntohs(payload->dest);
-	
-	#ifdef DEBUG
-		printf("TCP Header\n");
-		/* ports u_int16 */
-		printf("\t[src port]: %hu\n", ntohs(payload->source));
-		printf("\t[dst port]: %hu\n", ntohs(payload->dest));
-		/* seq, ack u_int32 */
-    	printf("\t[seq]: %#.8x\n", ntohl(payload->seq));
-    	printf("\t[ack seq]: %#.8x\n", ntohl(payload->ack_seq));
-    	/* flags endian managed by libraries */
-    	printf("\t[res1]: %hd\n", payload->res1);
-    	/* Header lenght in 4byte words */
-    	printf("\t[header length]: %hd byte\n", payload->doff*4);
-    	printf("\t[fin]: %hd\n", payload->fin);
-    	printf("\t[syn]: %hd\n", payload->syn);
-    	printf("\t[rst]: %hd\n", payload->rst);
-    	printf("\t[psh]: %hd\n", payload->psh);
-    	printf("\t[ack]: %hd\n", payload->ack);
-    	printf("\t[urg]: %hd\n", payload->urg);
-    	printf("\t[res2]: %hd\n", payload->res2);
-		/* window, checksum, urg u_int16 */
-		printf("\t[window]: %#.4hx\n", ntohs(payload->window));
-		printf("\t[checksum]: %#.4hx\n", ntohs(payload->check));
-		printf("\t[urg_ptr]: %hd\n", ntohs(payload->urg_ptr));
-	#endif
 }
 
-void parse_udp(const u_char *packet, struct packet_stat *stat) {
+boolean parse_udp(const u_char *packet, struct packet_stat *stat) {
 	const struct udphdr *payload; /* The UDP header */
 	payload = (struct udphdr*)(packet);
 	
@@ -157,23 +97,64 @@ void parse_udp(const u_char *packet, struct packet_stat *stat) {
 	stat->src_p = ntohs(payload->source);
 	stat->dst_p = ntohs(payload->dest);
 	
-	#ifdef DEBUG
-	printf("UDP Header\n");
-	/* All u_int16 */
-	printf("\t[src port]: %hu\n", ntohs(payload->source));
-	printf("\t[dst port]: %hu\n", ntohs(payload->dest));
-	printf("\t[length]: %hu byte\n", ntohs(payload->len));
-	printf("\t[checksum]: %#.4hx\n", ntohs(payload->check));
-	
+	/* Exclude unwanted traffic */
+	//if (stat->dst_p == 42166) {
+	//	return false;
+	//}
+	 
 	/* UDP payload */
-	printf("UDP Payload\n");
-	int i, len;
-	len = ntohs(payload->len);
-	for (i = SIZE_UDP; i<len; i++) {
-		printf("%.2x ", *(packet + i));
+	int len;
+	/* UDP length contains also headers */
+	len = ntohs(payload->len) - SIZE_UDP;
+	
+	if (stat->dst_p != 42166) {
+		parse_sopcast( (u_char*)(packet + SIZE_UDP), stat, len);
 	}
-	printf("\n");
-	#endif
+	return true;
+}
+
+/**
+ * Parse the UDP payload filling the informations of the stat packet
+ */
+void parse_sopcast(const u_char *packet, struct packet_stat *stat, int len) {
+	/* Parse the headers */
+	stat->flag = *(packet);
+	stat->id_peer = *(packet + 1);
+	stat->segments = *(packet + 2);
+	stat->id_stream = *(packet + 3);
+	stat->ts = (*(packet + 4)<<24) + (*(packet + 5)<<16) + (*(packet + 6)<<8) + *(packet + 7);
+	
+	/* Parse the segments */
+	int i,j;
+	int max = (stat->segments > MAX_SEGMENTS) ? MAX_SEGMENTS : stat->segments;
+	int shift = 8;
+	for (i=0; i<max; i++) {
+		//if ( i==0 ) {
+			stat->type[i] = *(packet + shift); 
+			stat->type_flag[i] = *(packet + shift + 1);
+			stat->length[i] = (*(packet + shift + 2)<<8) + *(packet + shift + 3);
+			int max_p = (stat->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : stat->length[i];
+			for (j=0; j<max_p; j++) {
+				stat->payload[i][j] = *(packet + shift + 4 + j);
+			}
+			shift += stat->length[i];
+		/*} else {
+			stat->type[i] = *(packet + shift); 
+			stat->type_flag[i] = *(packet + shift + 1);
+			stat->length[i] = (*(packet + shift + 2)<<8) + *(packet + shift + 3);
+			int max_p = (stat->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : stat->length[i];
+			for (j=0; j<max_p; j++) {
+				stat->payload[i][j] = *(packet + shift + 4 + j);
+			}*/
+		/* Print some pkt stat
+		char dir = (stat->src == remote_ip) ? '>' : '<';
+		fprintf(f, "%.4d%c ", stat->iplen, dir);
+		for (i = SIZE_UDP; i<len; i++) {
+			fprintf(f, "%.2x " , *(packet + i));
+		}
+		fprintf(f, "\n");
+		*/
+	}
 }
 
 /**
@@ -231,6 +212,7 @@ void serialize_packet(const struct packet_stat *pkt, char *str) {
  * Copy one statistic file to another
  */
 void statcopy(packet_stat *dst, packet_stat *src) {
+	int i,j;
 	dst->timestamp = src->timestamp;
 	dst->wirelen = src->wirelen;
 	dst->src = src->src;
@@ -240,5 +222,19 @@ void statcopy(packet_stat *dst, packet_stat *src) {
 	dst->dst_p = src->dst_p;
 	dst->iplen = src->iplen;
 	dst->real_ts = src->real_ts;
+	dst->flag = src->flag;
+	dst->id_peer = src->id_peer;
+	dst->segments = src->segments;
+	dst->id_stream = src->id_stream;
+	dst->ts = src->ts;
+	for (i=0; i<MAX_SEGMENTS; i++) {
+		dst->type[i] = src->type[i];
+		dst->type_flag[i] = src->type_flag[i];
+		dst->length[i] = src->length[i];
+		for (j=0; j<MAX_PAYLOAD; j++) {
+			dst->payload[i][j] = src->payload[i][j];
+		}
+	}
+	
 	dst->next = NULL;
 }

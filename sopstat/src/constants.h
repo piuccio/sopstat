@@ -10,6 +10,7 @@ typedef enum {false, true} boolean;
  #define INVALID_FOLDER 11
  #define INVALID_IP 12
  #define MALLOC_ERROR 20
+ #define FILTER_ERROR 30
 
 /**
  * PROTOCOL CODES
@@ -19,16 +20,24 @@ typedef enum {false, true} boolean;
  #define MAX_IP_ADDR 16
  
 /**
- * Short names
+ * Flow names
  */
+ #define FLOWS 5
  #define udpUP 0
  #define udpDW 1
  #define tcpUP 2
  #define tcpDW 3
+ #define udp 4
  
  
- #define FLOWS 4
+ 
  
  #define TIME_GRANULARITY 5
+ 
+/**
+ * Sopcast payload
+ */
+ #define MAX_SEGMENTS 3
+ #define MAX_PAYLOAD 50
  
 #endif /*CONSTANTS_H_*/
