@@ -42,8 +42,9 @@ char filter_exp[] = "not(udp.port < 1028) and not(udp.port == 42166)";
 /* List of packets */
 ipnode* tree;
 long num_pkt=0;
-int i;
 FILE* payload;
+payload_stat_container* container;
+int i;
 
 /* Time dimension */
 time_stat* timestamp; 
@@ -104,26 +105,26 @@ int main(int argc, char* argv[]) {
         }
         init_time_stat(timestamp);
         
-        /* Initialize the payload
-		if ( argc > 4 ) {
-			if ( !stoip(&remote_ip, argv[4]) ) {
-				printf("[ERROR] Invalid remote IP address %s\n", argv[4]);
-				return INVALID_IP;
-			} */
-			/* Open the file for the payload */
-			char fname[FILENAME_MAX];
-			sprintf(fname, "%s/payload.dump", argv[2]);
-			payload = fopen(fname, "w");
-			if (payload == NULL) {
-				printf("[ERROR] Unable to create %s\n", fname);
-				return INVALID_FOLDER;
-			}
-		//}
+		/* Open the file for the payload */
+		char fname[FILENAME_MAX];
+		sprintf(fname, "%s/payload.dump", argv[2]);
+		payload = fopen(fname, "w");
+		if (payload == NULL) {
+			printf("[ERROR] Unable to create %s\n", fname);
+			return INVALID_FOLDER;
+		} else {
+			container = (payload_stat_container*) malloc(sizeof(payload_stat_container));
+			container->flag = NULL;
+			container->id_peer = NULL;
+			container->segments = NULL;
+			container->id_stream = NULL;
+			container->type = NULL;
+			container->type_flag = NULL;
+			container->length = NULL;
+		}
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
-		
-		/* Check if there is the 4th parameter that changes the time granularity */
         pcap_loop(handle, -1, populate_tree, NULL);
 		
 		/* And close the session */
@@ -141,6 +142,7 @@ int main(int argc, char* argv[]) {
 		
 		/* Dump the payload */ 
 		dump_udp_payload(tree, payload);
+		print_payload_statistics(container, payload);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
@@ -163,7 +165,7 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	struct packet_stat stat;
 	
 
-	if ( !parse_packet(&stat, header, packet ) ) {
+	if ( !parse_packet(&stat, header, packet, container ) ) {
 		//Nothing to do for this packet
 		#ifdef DEBUG
 			printf("\nDropping a packet at time %ld\n", stat.timestamp);
