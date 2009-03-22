@@ -35,14 +35,15 @@
 void usage(void);
 void populate_tree(u_char *, const struct pcap_pkthdr *, const u_char *);
 
-//FILE* f[MAX_OPEN_FILES];
-//char fname[FILENAME_MAX];
 u_int local_ip; /* hexadecimal form, should be easier to compare */
+struct bpf_program fp;		/* The compiled filter expression */
+char filter_exp[] = "not(udp.port < 1028) and not(udp.port == 42166)";
 
 /* List of packets */
 ipnode* tree;
 long num_pkt=0;
 int i;
+FILE* payload;
 
 /* Time dimension */
 time_stat* timestamp; 
@@ -64,6 +65,16 @@ int main(int argc, char* argv[]) {
                 printf("[ERROR] Unable to open %s\n\t%s \n", argv[1], errbuf);
                 return INPUT_ERROR;
         }
+        /* Filters out unwanted traffic
+        if (pcap_compile(handle, &fp, filter_exp, 0, 0) == -1) {
+			printf("[ERROR] Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
+			return FILTER_ERROR;
+		}
+		if (pcap_setfilter(handle, &fp) == -1) {
+			printf("[ERROR] Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle));
+			return FILTER_ERROR;
+		}
+        */
         
         /* Take the local IP */
         if ( stoip(&local_ip, argv[3]) == false ) {
@@ -93,6 +104,21 @@ int main(int argc, char* argv[]) {
         }
         init_time_stat(timestamp);
         
+        /* Initialize the payload
+		if ( argc > 4 ) {
+			if ( !stoip(&remote_ip, argv[4]) ) {
+				printf("[ERROR] Invalid remote IP address %s\n", argv[4]);
+				return INVALID_IP;
+			} */
+			/* Open the file for the payload */
+			char fname[FILENAME_MAX];
+			sprintf(fname, "%s/payload.dump", argv[2]);
+			payload = fopen(fname, "w");
+			if (payload == NULL) {
+				printf("[ERROR] Unable to create %s\n", fname);
+				return INVALID_FOLDER;
+			}
+		//}
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
@@ -113,17 +139,8 @@ int main(int argc, char* argv[]) {
 			return INVALID_FOLDER;
 		}
 		
-		/* Dump the payload */
-		if ( argc > 4 ) {
-			u_int other_ip;
-			if ( !stoip(&other_ip, argv[4]) ) {
-				printf("[ERROR] Invalid remote IP address %s\n", argv[4]);
-				return INVALID_IP;
-			}
-			if ( dump_udp_payload(tree, other_ip) != NO_ERROR ) {
-				return INVALID_IP;
-			}
-		}
+		/* Dump the payload */ 
+		dump_udp_payload(tree, payload);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
@@ -146,7 +163,7 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	struct packet_stat stat;
 	
 
-	if ( !parse_packet(&stat, header, packet) ) {
+	if ( !parse_packet(&stat, header, packet ) ) {
 		//Nothing to do for this packet
 		#ifdef DEBUG
 			printf("\nDropping a packet at time %ld\n", stat.timestamp);

@@ -101,6 +101,18 @@ int print_time(time_stat *t, char * nome) {
 	}
 	fprintf(ft[tcpDW], "#[timesample] [size in kB] [number of packets]\n");
 	
+	sprintf(fname, "%s/time_stream.dat", nome);
+	ft[udp] = fopen(fname, "w");
+	if (ft[udp] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(ft[udpUP]);
+		fclose(ft[udpDW]);
+		fclose(ft[tcpUP]);
+		fclose(ft[tcpDW]);
+		return INVALID_FOLDER;
+	}
+	fprintf(ft[udp], "#[timesample] [size in kB] [number of packets]\n");
+	
 	for (i=0; i<FLOWS; i++) {
 		print_time_flow(t, i);
 		fclose( ft[i] );

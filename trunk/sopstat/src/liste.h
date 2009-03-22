@@ -22,6 +22,6 @@ void insert_stat(ipnode *, packet_stat *, int);
 void insert_node(ipnode* , u_int, packet_stat *, direction);
 int print(ipnode*, char * );
 void print_flow(ipnode* , int);
-int dump_udp_payload(ipnode* , u_int);
+void dump_udp_payload(ipnode* , FILE* );
 
 #endif /*LISTE_H_*/

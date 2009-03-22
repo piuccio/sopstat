@@ -96,10 +96,12 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 		
 		//Insert the stat in the correct place
 		int flow;
-		if (dir == upstream) {
-			flow = (pkt->proto == IPPROTO_TCP) ? tcpUP : udpUP;
+		if ( pkt->proto == IPPROTO_TCP ) {
+			flow = (dir == upstream) ? tcpUP : tcpDW;
 		} else {
-		    flow = (pkt->proto == IPPROTO_TCP) ? tcpDW : udpDW;
+			flow = (dir == upstream) ? udpUP : udpDW;
+			/* It's a udp stream */
+			insert_stat(n, pkt, udp);
 		}
 		
 		insert_stat(n, pkt, flow);
@@ -125,10 +127,12 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 		n->next = last;  
 		//Insert the stat in the correct place
 		int flow;
-		if (dir == upstream) {
-			flow = (pkt->proto == IPPROTO_TCP) ? tcpUP : udpUP;
+		if ( pkt->proto == IPPROTO_TCP ) {
+			flow = (dir == upstream) ? tcpUP : tcpDW;
 		} else {
-		    flow = (pkt->proto == IPPROTO_TCP) ? tcpDW : udpDW;
+			flow = (dir == upstream) ? udpUP : udpDW;
+			/* It's a udp stream */
+			insert_stat(last, pkt, udp);
 		}
 		
 		insert_stat(last, pkt, flow);
@@ -171,6 +175,16 @@ int print(ipnode *n, char * nome){
 		fclose(f[tcpUP]);
 		return INVALID_FOLDER;
 	}
+	sprintf(fname, "%s/stream.dat", nome);
+	f[udp] = fopen(fname, "w");
+	if (f[udp] == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(f[udpUP]);
+		fclose(f[udpDW]);
+		fclose(f[tcpUP]);
+		fclose(f[tcpDW]);
+		return INVALID_FOLDER;
+	}
 	
 	for (i=0; i<FLOWS; i++) {
 		print_flow(n, i);
@@ -207,54 +221,87 @@ void print_flow(ipnode* n, int flow) {
 }
 
 /* Print the udp payload of the communication between two hosts */ 
-int dump_udp_payload(ipnode* n, u_int ip) {
-	/* Find the host in the list */
-	if ( n->ip == ip ){
-		/* HERE !! */
-		printf("[P] Trovato %s\n", n->address);
+void dump_udp_payload(ipnode* tree, FILE* f) {
+	int i;
+	
+	ipnode* n = tree;
+	while(n->next != NULL) {
+		fprintf(f, "#HOST %s (%#.8lx)\n", n->address, n->ip);
 		
 		packet_stat* up = (packet_stat*) malloc(sizeof(packet_stat));
 		packet_stat* dw = (packet_stat*) malloc(sizeof(packet_stat));
+		packet_stat* st = (packet_stat*) malloc(sizeof(packet_stat));
 		up = n->first[udpUP];
 		dw = n->first[udpDW];
+		st = n->first[udp];
 		
+		while ( st != NULL ) {
+			fprintf(f,"%.2hx%.2hx %.2hx%.2hx %.8hx %.2hx%.2hx %.4hx\n", st->flag, st->id_peer, st->segments, st->id_stream, st->ts, st->type[0], st->type_flag[0], st->length[0]);
+			st = st->next;
+		}
+		
+		n = n->next; 
+	}
+		/* I suspect that 5-8 is related to the time
+		fprintf(f, "#UPLOAD difference\n");
+		while (up->next != NULL) {
+			int diff1, diff2;
+			diff1 = (up->next->real_ts.tv_sec-up->real_ts.tv_sec)*1000 + (up->next->real_ts.tv_usec-up->real_ts.tv_usec)/1000;
+			diff2 = ((u_int)up->next->payload[6]-(u_int)up->payload[6])*256 + (u_int)up->next->payload[7]-(u_int)up->payload[7];
+			fprintf(f, "%d\n", abs(diff1 - diff2) );
+			up = up->next;
+		}*/
+		/* See if there are some bytes that remain equal or increase
+		fprintf(f, "#UPLOAD difference\n");
+		while (up->next != NULL) {
+			for ( i=0; i<60; i++) {
+				fprintf(f,"%.2x ", abs(up->payload[i] - up->next->payload[i]) );
+			}
+			fprintf(f,"\n");
+			up = up->next;
+		}
+		
+		fprintf(f, "\n\n#DOWNLOAD difference\n");
+		while (dw->next != NULL) {
+			for ( i=0; i<60; i++) {
+				fprintf(f,"%.2x ", abs(dw->payload[i] - dw->next->payload[i]));
+			}
+			fprintf(f,"\n");
+			dw = dw->next;
+		}*/
+		
+		/* See if there are some bytes that remain equal in the whole stream
+		up = n->first[udpUP];
+		dw = n->first[udpDW];
+		//packet_stat* nw = (packet_stat*) malloc(sizeof(packet_stat));
+		//packet_stat* nx = (packet_stat*) malloc(sizeof(packet_stat));
 		while (up != NULL) {
-			/* Print everything until I reach the last udp pkt */
+			//Print everything until I reach the last udp pkt
 			if ( timeval_bigger(up->real_ts, dw->real_ts) ) {
-				/* Download comes first */
-				printf("Download %d\n", dw->timestamp);
+				//Download comes first
+				//printf("Download %d\n", dw->timestamp);
 				if ( dw->next == NULL) {
-					/* Download is over, break the cycle */
+					//Download is over, break the cycle
 					break;
 				} else {
 					dw = dw->next;
 				}
 			} else {
-				printf("Upload %d\n", up->timestamp);
+				//printf("Upload %d\n", up->timestamp);
 				if ( up->next == NULL ) {
-					/* This is the last udp packet, dump remaining dw */
+					//This is the last udp packet, dump remaining dw
 					while ( dw != NULL ) {
-						printf("Download %d\n", dw->timestamp);
+						//printf("Download %d\n", dw->timestamp);
 						dw = dw->next;
 					}
 				}
 				up = up->next;
 			}
 		}
-		
-		/* There is some upload to print */
+		*/
+		/* There is some upload to print
 		while ( up != NULL ) {
-			printf("Upload %d\n", up->timestamp);
+			//printf("Upload %d\n", up->timestamp);
 			up = up->next;
-		}
-		
-	} else if (n->next != NULL){
-		/* Iterate on next host. Recursive call */
-		dump_udp_payload(n->next, ip);
-  	} else {
-		/* Wrong IP ? */
-		printf("[ERROR] Remote address not found\n");
-		return INVALID_IP;
-	}
-	return NO_ERROR;
+		}*/
 }
