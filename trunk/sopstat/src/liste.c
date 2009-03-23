@@ -81,7 +81,7 @@ void insert_stat(ipnode *n, packet_stat *pkt, int flow) {
  */
 void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 	if ( (n->ip == hostip) || (n->ip == 0)){
-		//This is can be the first element of the tree
+		//This is the first element of the tree
 		if ( n->ip == 0 ) {
 			int i;
 			for (i=0; i<FLOWS; i++) {
@@ -91,11 +91,14 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			    n->num[i] = 0;
 			    int j,k;
 			    for (j=0; j<MAX_PAYLOAD; j++) {
-			    	for (k=0; k<CHISQAURE_INTERVALS; k++) {
+			    	for (k=0; k<CHISQUARE_INTERVALS; k++) {
 			    		n->chi[i][j].num[k] = 0;
+			    		n->globalchi[i][j].num[k] = 0;
 			    	}
 			    	n->chi[i][j].x = 0;
 			    	n->chi[i][j].total_num = 0;
+			    	n->globalchi[i][j].x = 0;
+			    	n->globalchi[i][j].total_num = 0;
 			    }
 			}
 			n->ip = hostip;
@@ -134,7 +137,7 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			last->alen[i] = 0;
 			int j,k;
 			for (j=0; j<MAX_PAYLOAD; j++) {
-				for (k=0; k<CHISQAURE_INTERVALS; k++) {
+				for (k=0; k<CHISQUARE_INTERVALS; k++) {
 					last->chi[i][j].num[k] = 0;
 				}
 				last->chi[i][j].x = 0;
@@ -334,8 +337,37 @@ void update_chisquare(ipnode* n, packet_stat *s, int flow) {
 			j = (s->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : s->length[i];
 			for (j-=1; j>=0; j--) {
 				n->chi[flow][j].total_num++;
-				k = (int)s->payload[i][j]*CHISQAURE_INTERVALS/255;
+				k = (int)s->payload[i][j]*CHISQUARE_INTERVALS/255;
 				n->chi[flow][j].num[k]++;
+			}
+		}
+	}
+}
+
+/**
+ * In this case I have a direction rather than a flow
+ * and I can also have TCP packets
+ */
+void update_global_chisquare(ipnode* n, packet_stat *s, int dir) {
+	int flow;
+	if ( s->proto == IPPROTO_TCP ) {
+		return;
+	} else {
+		flow = (dir == upstream) ? udpUP : udpDW;
+	}
+	
+	int i,j,k;
+	i = (s->segments > MAX_SEGMENTS) ? MAX_SEGMENTS : s->segments; 
+	for (i-=1; i>=0; i--) {
+		if (s->type[i] == 6 && s->type_flag[i] == 1) {
+			j = (s->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : s->length[i];
+			for (j-=1; j>=0; j--) {
+				n->globalchi[flow][j].total_num++;
+				k = (int)s->payload[i][j]*CHISQUARE_INTERVALS/255;
+				n->globalchi[flow][j].num[k]++;
+				// But also in the aggregation
+				n->globalchi[udp][j].total_num++;
+				n->globalchi[udp][j].num[k]++;
 			}
 		}
 	}
@@ -344,15 +376,35 @@ void update_chisquare(ipnode* n, packet_stat *s, int flow) {
 void print_chisquare(ipnode* tree, FILE* f) {
 	ipnode* n = tree;
 	int i,k;
+	
+	/* Global chi square */
+	double avg,avgDW,avgUP;
+	fprintf(f, "#GLOBAL_CHISQUARE\n#[byte] [interval] [udp] [udpUP] [udpDW]\n");
+	for (i=0; i<MAX_PAYLOAD; i++) {
+		avg = (double)n->globalchi[udp][i].total_num / CHISQUARE_INTERVALS;
+		avgDW = (double)n->globalchi[udpDW][i].total_num / CHISQUARE_INTERVALS;
+		avgUP = (double)n->globalchi[udpUP][i].total_num / CHISQUARE_INTERVALS;
+		for (k=0; k<CHISQUARE_INTERVALS; k++) {
+			/* Sum of sqr(num of samples, avg samples in an interval) / avg */
+			n->globalchi[udp][i].x += (n->globalchi[udp][i].num[k] - avg)*(n->globalchi[udp][i].num[k] - avg);
+			n->globalchi[udpUP][i].x += (n->globalchi[udpUP][i].num[k] - avgUP)*(n->globalchi[udpUP][i].num[k] - avgUP);
+			n->globalchi[udpDW][i].x += (n->globalchi[udpDW][i].num[k] - avgDW)*(n->globalchi[udpDW][i].num[k] - avgDW);
+			fprintf(f, "%d %d %d %d %d\n", i,k, n->globalchi[udp][i].num[k], n->globalchi[udpUP][i].num[k], n->globalchi[udpDW][i].num[k]);
+		}
+		fprintf(f, "#[byte%d] %.3f %.3f %.3f\n", i, n->globalchi[udp][i].x/avg, n->globalchi[udpUP][i].x/avgUP, n->globalchi[udpDW][i].x/avgDW);
+		fprintf(f,"\n\n");
+	}
+	
+	/* Per host chi square */
 	double e,eUP,eDW;
 	while (n != NULL) {
 		if ( n->chi[udp][1].total_num > 200 ) {
 			fprintf(f, "#CHISQUARE %s\n#[byte] [interval] [udp] [udpUP] [udpDW]\n", n->address);
 			for (i=0; i<MAX_PAYLOAD; i++) {
-				e = (double)n->chi[udp][i].total_num / CHISQAURE_INTERVALS;
-				eUP = (double)n->chi[udpUP][i].total_num / CHISQAURE_INTERVALS;
-				eDW = (double)n->chi[udpDW][i].total_num / CHISQAURE_INTERVALS;
-				for (k=0; k<CHISQAURE_INTERVALS; k++) {
+				e = (double)n->chi[udp][i].total_num / CHISQUARE_INTERVALS;
+				eUP = (double)n->chi[udpUP][i].total_num / CHISQUARE_INTERVALS;
+				eDW = (double)n->chi[udpDW][i].total_num / CHISQUARE_INTERVALS;
+				for (k=0; k<CHISQUARE_INTERVALS; k++) {
 					/* Sum of sqr(num of samples, avg samples in an interval) / avg */
 					n->chi[udp][i].x += (n->chi[udp][i].num[k] - e)*(n->chi[udp][i].num[k] - e);
 					n->chi[udpUP][i].x += (n->chi[udpUP][i].num[k] - eUP)*(n->chi[udpUP][i].num[k] - eUP);

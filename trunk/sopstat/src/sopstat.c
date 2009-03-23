@@ -192,6 +192,8 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	host = (stat.src == local_ip) ? stat.dst : stat.src;
 	direction dir = (stat.src == local_ip) ? upstream : downstream;
 	insert_node(tree, host, &stat, dir);
+	/* Compute the chi square test */
+	update_global_chisquare(tree, &stat, dir);
 	
 	/* Store it also in the time dimension */
 	register_packet(timestamp, &stat, dir);

@@ -18,6 +18,7 @@ typedef struct ipnode {
    struct packet_stat* first[FLOWS];
    struct packet_stat* last[FLOWS];
    struct chisquare chi[FLOWS][MAX_PAYLOAD];
+   struct chisquare globalchi[FLOWS][MAX_PAYLOAD]; /* For all the hosts */
    struct ipnode* next;
 } ipnode;
 
@@ -28,5 +29,6 @@ void print_flow(ipnode* , int);
 void dump_udp_payload(ipnode* , FILE* );
 void update_chisquare(ipnode* , packet_stat *, int);
 void print_chisquare(ipnode* , FILE* );
+void update_global_chisquare(ipnode* , packet_stat *, int);
 
 #endif /*LISTE_H_*/

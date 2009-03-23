@@ -34,7 +34,7 @@ typedef enum {false, true} boolean;
   * Parameters
   */
  #define TIME_GRANULARITY 5
- #define CHISQAURE_INTERVALS 16
+ #define CHISQUARE_INTERVALS 16
  
 /**
  * Sopcast payload
