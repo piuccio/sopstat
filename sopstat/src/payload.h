@@ -21,7 +21,7 @@ typedef struct payload_stat_container {
 
 typedef struct chisquare {
 	double x;
-	int num[CHISQAURE_INTERVALS];
+	int num[CHISQUARE_INTERVALS];
 	int total_num;
 } chisquare;
 
