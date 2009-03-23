@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "constants.h"
 #include "packet.h"
 #include "time.h"
+#include "payload.h"
 
 typedef struct ipnode {
    u_long ip;
@@ -15,6 +17,7 @@ typedef struct ipnode {
    long num[FLOWS]; /* Number of packets per stream */
    struct packet_stat* first[FLOWS];
    struct packet_stat* last[FLOWS];
+   struct chisquare chi[FLOWS][MAX_PAYLOAD];
    struct ipnode* next;
 } ipnode;
 
@@ -23,5 +26,7 @@ void insert_node(ipnode* , u_int, packet_stat *, direction);
 int print(ipnode*, char * );
 void print_flow(ipnode* , int);
 void dump_udp_payload(ipnode* , FILE* );
+void update_chisquare(ipnode* , packet_stat *, int);
+void print_chisquare(ipnode* , FILE* );
 
 #endif /*LISTE_H_*/

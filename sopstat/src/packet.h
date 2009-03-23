@@ -33,7 +33,7 @@ typedef struct packet_stat {
 	u_short type[3]; /* 1B Type of message */ 
 	u_short type_flag[3]; /* 1B Flag for the message type */
 	u_short length[3]; /* 2B Length of the segment */
-	u_char payload[3][60]; /* Segment payload */
+	u_short payload[3][60]; /* Segment payload */
 	
 	struct packet_stat* next; /* Next pointer for the list */
 } packet_stat;
