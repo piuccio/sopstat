@@ -27,6 +27,7 @@
 #include "constants.h"
 #include "packet.h"
 #include "liste.h"
+#include "payload.h"
 
 /**
  * Insert a statistic packet inside a list
@@ -88,6 +89,14 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			    n->last[i] = NULL;
 			    n->alen[i] = 0;
 			    n->num[i] = 0;
+			    int j,k;
+			    for (j=0; j<MAX_PAYLOAD; j++) {
+			    	for (k=0; k<CHISQAURE_INTERVALS; k++) {
+			    		n->chi[i][j].num[k] = 0;
+			    	}
+			    	n->chi[i][j].x = 0;
+			    	n->chi[i][j].total_num = 0;
+			    }
 			}
 			n->ip = hostip;
 			iptos(hostip, n->address);
@@ -102,10 +111,12 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			flow = (dir == upstream) ? udpUP : udpDW;
 			/* It's a udp stream */
 			insert_stat(n, pkt, udp);
+			/* Chi square */
+			update_chisquare(n, pkt, udp);
+			update_chisquare(n, pkt, flow);
 		}
 		
 		insert_stat(n, pkt, flow);
-		
 	} else if (n->next != NULL){
 		/* Iterate on next host. Recursive call */
 		insert_node(n->next, hostip, pkt, dir);
@@ -121,6 +132,14 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			last->first[i] = NULL;
 			last->last[i] = NULL;
 			last->alen[i] = 0;
+			int j,k;
+			for (j=0; j<MAX_PAYLOAD; j++) {
+				for (k=0; k<CHISQAURE_INTERVALS; k++) {
+					last->chi[i][j].num[k] = 0;
+				}
+				last->chi[i][j].x = 0;
+				last->chi[i][j].total_num = 0;
+			}
 		}
 		
 		/* Add the packet stat to the first node */
@@ -133,6 +152,9 @@ void insert_node(ipnode* n, u_int hostip, packet_stat *pkt, direction dir){
 			flow = (dir == upstream) ? udpUP : udpDW;
 			/* It's a udp stream */
 			insert_stat(last, pkt, udp);
+			/* Chi square */
+			update_chisquare(last, pkt, udp);
+			update_chisquare(last, pkt, flow);
 		}
 		
 		insert_stat(last, pkt, flow);
@@ -302,4 +324,46 @@ void dump_udp_payload(ipnode* tree, FILE* f) {
 			//printf("Upload %d\n", up->timestamp);
 			up = up->next;
 		}*/
+}
+
+void update_chisquare(ipnode* n, packet_stat *s, int flow) {
+	int i,j,k;
+	i = (s->segments > MAX_SEGMENTS) ? MAX_SEGMENTS : s->segments; 
+	for (i-=1; i>=0; i--) {
+		if (s->type[i] == 6 && s->type_flag[i] == 1) {
+			j = (s->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : s->length[i];
+			for (j-=1; j>=0; j--) {
+				n->chi[flow][j].total_num++;
+				k = (int)s->payload[i][j]*CHISQAURE_INTERVALS/255;
+				n->chi[flow][j].num[k]++;
+			}
+		}
+	}
+}
+
+void print_chisquare(ipnode* tree, FILE* f) {
+	ipnode* n = tree;
+	int i,k;
+	double e,eUP,eDW;
+	while (n != NULL) {
+		if ( n->chi[udp][1].total_num > 200 ) {
+			fprintf(f, "#CHISQUARE %s\n#[byte] [interval] [udp] [udpUP] [udpDW]\n", n->address);
+			for (i=0; i<MAX_PAYLOAD; i++) {
+				e = (double)n->chi[udp][i].total_num / CHISQAURE_INTERVALS;
+				eUP = (double)n->chi[udpUP][i].total_num / CHISQAURE_INTERVALS;
+				eDW = (double)n->chi[udpDW][i].total_num / CHISQAURE_INTERVALS;
+				for (k=0; k<CHISQAURE_INTERVALS; k++) {
+					/* Sum of sqr(num of samples, avg samples in an interval) / avg */
+					n->chi[udp][i].x += (n->chi[udp][i].num[k] - e)*(n->chi[udp][i].num[k] - e);
+					n->chi[udpUP][i].x += (n->chi[udpUP][i].num[k] - eUP)*(n->chi[udpUP][i].num[k] - eUP);
+					n->chi[udpDW][i].x += (n->chi[udpDW][i].num[k] - eDW)*(n->chi[udpDW][i].num[k] - eDW);
+					fprintf(f, "%d %d %d %d %d\n", i,k, n->chi[udp][i].num[k], n->chi[udpUP][i].num[k], n->chi[udpDW][i].num[k]);
+				}
+				fprintf(f, "#[byte%d] %.3f %.3f %.3f\n", i, n->chi[udp][i].x/e, n->chi[udpUP][i].x/eUP, n->chi[udpDW][i].x/eDW);
+				fprintf(f,"\n\n");
+			}
+		}
+		
+		n = n->next;
+	}
 }
