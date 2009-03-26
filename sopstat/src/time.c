@@ -18,6 +18,10 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 		
 		t->pkt[flow]++;
 		t->size[flow] += pkt->iplen;
+		if (rate(pkt)) {
+			t->videopkt[flow]++;
+		    t->videosize[flow] += pkt->iplen;
+		}
 		
 	} else {
 		if ( t->last == NULL ) {
@@ -54,6 +58,8 @@ void init_time_stat(time_stat *timestamp) {
 		timestamp->host[i] = 0;
 		timestamp->pkt[i] = 0;
 		timestamp->size[i] = 0;
+		timestamp->videopkt[i] = 0;
+		timestamp->videosize[i] = 0;
 	}
 	timestamp->next = NULL;
 	timestamp->last = NULL;
@@ -69,7 +75,7 @@ int print_time(time_stat *t, char * nome) {
 		printf("[ERROR] Unable to create %s\n", fname);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets]\n");
+	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB]\n");
 	
 	sprintf(fname, "%s/time_dwudp.dat", nome);
 	ft[udpDW] = fopen(fname, "w");
@@ -78,7 +84,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpUP]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets]\n");
+	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB]\n");
 	
 	sprintf(fname, "%s/time_uptcp.dat", nome);
 	ft[tcpUP] = fopen(fname, "w");
@@ -88,7 +94,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpDW]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[tcpUP], "#[timesample] [size in kB] [number of packets]\n");
+	fprintf(ft[tcpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB]\n");
 	
 	sprintf(fname, "%s/time_dwtcp.dat", nome);
 	ft[tcpDW] = fopen(fname, "w");
@@ -99,7 +105,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[tcpUP]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[tcpDW], "#[timesample] [size in kB] [number of packets]\n");
+	fprintf(ft[tcpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB]\n");
 	
 	sprintf(fname, "%s/time_stream.dat", nome);
 	ft[udp] = fopen(fname, "w");
@@ -111,7 +117,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[tcpDW]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udp], "#[timesample] [size in kB] [number of packets]\n");
+	fprintf(ft[udp], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB]\n");
 	
 	for (i=0; i<FLOWS; i++) {
 		print_time_flow(t, i);
@@ -127,7 +133,7 @@ void print_time_flow(time_stat *t, int flow) {
 	u_long i=0;
 	while ( i <= t->last->ts ) {
 		if ( to_print->ts <= i ) {
-			fprintf(ft[flow], "%d %ld %d\n", to_print->ts, to_print->size[flow]/1024, to_print->pkt[flow]);
+			fprintf(ft[flow], "%d %ld %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY));
 			to_print = to_print->next;
 		} else {
 			fprintf(ft[flow], "%lu 0 0\n", i);
@@ -150,4 +156,17 @@ boolean timeval_bigger(struct timeval a, struct timeval b) {
 	}
 	
 	return (a.tv_sec > b.tv_sec) ? true : false;
+}
+
+/* This function has to decide if the considered packet is a video packet or not
+ * It returns a boolean value:
+ *   - TRUE : video (or eventually data)
+ *   - FALSE : other type
+ */
+
+boolean rate(packet_stat *pkt){
+	//printf("%x %x %x %d \n", pkt->id_peer,pkt->type[0], pkt->type_flag[0], pkt->length[0] );
+	if ( (pkt->type[0] == 6) && (pkt->type_flag[0] == 1) && (pkt->length[0] > 1000) && (pkt->segments == 1) )
+	  return true;
+	return false;	  
 }

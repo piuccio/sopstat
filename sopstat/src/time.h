@@ -10,6 +10,8 @@ typedef struct time_stat {
 	long size[FLOWS]; /* aggragate IPlen size */
 	int pkt[FLOWS]; /* number of packets */
 	int host[FLOWS]; /* number of host */
+	int videopkt[FLOWS]; /* number of video (and data) packet */
+	int videosize[FLOWS]; /* lenght of video stream */
 	struct time_stat* next;
 	struct time_stat* last;
 } time_stat;
@@ -21,5 +23,6 @@ int print_time(time_stat *, char *);
 void print_time_flow(time_stat *, int);
 int timeval_difference(struct timeval, struct timeval);
 boolean timeval_bigger(struct timeval, struct timeval);
+boolean rate(packet_stat *);
 
 #endif /*TIME_H_*/
