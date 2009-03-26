@@ -33,7 +33,7 @@ typedef enum {false, true} boolean;
  /**
   * Parameters
   */
- #define TIME_GRANULARITY 5
+ #define TIME_GRANULARITY 10
  #define CHISQUARE_INTERVALS 16
  
 /**
