@@ -40,6 +40,6 @@ typedef enum {false, true} boolean;
  * Sopcast payload
  */
  #define MAX_SEGMENTS 3
- #define MAX_PAYLOAD 50
+ #define MAX_PAYLOAD 40
  
 #endif /*CONSTANTS_H_*/

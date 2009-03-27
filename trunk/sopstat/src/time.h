@@ -9,12 +9,19 @@ typedef struct time_stat {
 	int ts; /* Relative timestamp */
 	long size[FLOWS]; /* aggragate IPlen size */
 	int pkt[FLOWS]; /* number of packets */
-	int host[FLOWS]; /* number of host */
+	int hosts[FLOWS]; /* number of host */
 	int videopkt[FLOWS]; /* number of video (and data) packet */
 	int videosize[FLOWS]; /* lenght of video stream */
+	struct ip_host* hostnames[FLOWS]; /* List of the hosts found */ 
 	struct time_stat* next;
 	struct time_stat* last;
 } time_stat;
+
+typedef struct ip_host {
+	u_long ip; /* Unsigned long ip */
+	int count; /* How many time it appears */
+	struct ip_host* next;
+} ip_host;
  
 /* PROTOTYPES */
 void register_packet(time_stat *, packet_stat *, int);
@@ -23,6 +30,7 @@ int print_time(time_stat *, char *);
 void print_time_flow(time_stat *, int);
 int timeval_difference(struct timeval, struct timeval);
 boolean timeval_bigger(struct timeval, struct timeval);
-boolean rate(packet_stat *);
+boolean is_video(packet_stat *);
+void register_host(u_long, time_stat *, int);
 
 #endif /*TIME_H_*/
