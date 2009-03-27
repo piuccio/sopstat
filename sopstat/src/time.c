@@ -26,6 +26,10 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 				t->videopkt[udp]++;
 		    	t->videosize[udp] += pkt->iplen;
 			}
+			if (is_discovery(pkt)){
+				t->discoverypkt[udp]++;
+				t->discoverysize[udp]+=pkt->iplen;
+			}
 			register_host(host, t, udp);
 		}
 		
@@ -35,6 +39,10 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 			t->videopkt[flow]++;
 		    t->videosize[flow] += pkt->iplen;
 		}
+		if (is_discovery(pkt)){
+				t->discoverypkt[flow]++;
+				t->discoverysize[flow]+=pkt->iplen;
+			}
 		register_host(host, t, flow);
 		
 	} else {
@@ -90,7 +98,7 @@ int print_time(time_stat *t, char * nome) {
 		printf("[ERROR] Unable to create %s\n", fname);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host]\n");
+	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps]\n");
 	
 	sprintf(fname, "%s/time_dwudp.dat", nome);
 	ft[udpDW] = fopen(fname, "w");
@@ -99,7 +107,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpUP]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host]\n");
+	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps]\n");
 	
 	sprintf(fname, "%s/time_uptcp.dat", nome);
 	ft[tcpUP] = fopen(fname, "w");
@@ -148,7 +156,7 @@ void print_time_flow(time_stat *t, int flow) {
 	u_long i=0;
 	while ( i <= t->last->ts ) {
 		if ( to_print->ts <= i ) {
-			fprintf(ft[flow], "%d %ld %d %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY), to_print->hosts[flow]);
+			fprintf(ft[flow], "%d %ld %d %d %d %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY), to_print->hosts[flow], to_print->discoverypkt[flow], to_print->discoverysize[flow]/TIME_GRANULARITY);
 			to_print = to_print->next;
 		} else {
 			fprintf(ft[flow], "%lu 0 0 0 0 0\n", i*10);
@@ -180,6 +188,17 @@ boolean timeval_bigger(struct timeval a, struct timeval b) {
  */
 boolean is_video(packet_stat *pkt){
 	if ( (pkt->type[0] == 6) && (pkt->type_flag[0] == 1) && (pkt->length[0] > 1000) && (pkt->segments == 1) )
+	  return true;
+	return false;	  
+}
+
+/* This function has to decide if the considered packet is a discovery packet or not
+ * It returns a boolean value:
+ *   - TRUE : discovery
+ *   - FALSE : other type
+ */
+boolean is_discovery(packet_stat *pkt){
+	if ( (pkt->flag == 0xff) && (pkt->id_peer == 0xff) && (pkt->length[0] == 44 ) && (pkt->segments == 1) )
 	  return true;
 	return false;	  
 }
