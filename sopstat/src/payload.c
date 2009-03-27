@@ -51,3 +51,33 @@ void print_payload_stat(payload_stat* s, FILE* f) {
 		print_payload_stat(s->next, f);
 	} 
 }
+
+void print_video_payload(ipnode* n, FILE* f) {
+	packet_stat *s;
+	int i,j,maxi,maxp;
+	/* Iterate on the node */
+	while (n != NULL) {
+		/* Get the first stat and iterate */
+		s = n->first[udpDW];
+		while (s != NULL) {
+			/* How many segments ? */
+			maxi = s->segments > MAX_SEGMENTS ? MAX_SEGMENTS : s->segments;
+			for (i=0; i<maxi; i++) {
+				/* Only the video part */
+				if ( s->type[i] == 6 && s->type_flag[i] == 1) {
+					/* How many bytes */
+					maxp = s->length[i] > MAX_PAYLOAD ? MAX_PAYLOAD : s->length[i];
+					for (j=0; j<maxp; j++) {
+						fprintf(f,"%.2x ", s->payload[i][j]);
+					}
+				}
+			}
+			/* Next stat for this node */
+			s = s->next;
+			fprintf(f,"\n");
+		}
+		/* Next node */
+		n = n->next;
+		fprintf(f,"#\n");
+	}
+}

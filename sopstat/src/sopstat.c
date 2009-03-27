@@ -30,6 +30,7 @@
 #include "packet.h"
 #include "liste.h"
 #include "time.h"
+#include "payload.h"
 
 /* Prototypes */
 void usage(void);
@@ -143,7 +144,8 @@ int main(int argc, char* argv[]) {
 		/* Dump the payload */ 
 		//dump_udp_payload(tree, payload);
 		//print_payload_statistics(container, payload);
-		print_chisquare(tree, payload);
+		//print_chisquare(tree, payload);
+		print_video_payload(tree, payload);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
