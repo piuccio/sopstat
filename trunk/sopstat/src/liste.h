@@ -8,7 +8,12 @@
 #include "constants.h"
 #include "packet.h"
 #include "time.h"
-#include "payload.h"
+
+typedef struct chisquare {
+	double x;
+	int num[CHISQUARE_INTERVALS];
+	int total_num;
+} chisquare;
 
 typedef struct ipnode {
    u_long ip;
@@ -21,6 +26,7 @@ typedef struct ipnode {
    struct chisquare globalchi[FLOWS][MAX_PAYLOAD]; /* For all the hosts */
    struct ipnode* next;
 } ipnode;
+
 
 void insert_stat(ipnode *, packet_stat *, int);
 void insert_node(ipnode* , u_int, packet_stat *, direction);

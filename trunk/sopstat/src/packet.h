@@ -8,7 +8,7 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#include "payload.h"
+//#include "payload.h"
 
 /* int: 10*3, short: 5*5, blank: 1*6 +margin :P */
 #define MAX_SERIALIZATION 70 
@@ -30,13 +30,30 @@ typedef struct packet_stat {
 	u_short id_stream; /* 1B ID of the stream */
 	u_int ts; /* 4B Timestamp of the message */
 	/* Beginning of the segment, no more than 3 segs */
-	u_short type[3]; /* 1B Type of message */ 
-	u_short type_flag[3]; /* 1B Flag for the message type */
-	u_short length[3]; /* 2B Length of the segment */
-	u_short payload[3][60]; /* Segment payload */
+	u_short type[MAX_SEGMENTS]; /* 1B Type of message */ 
+	u_short type_flag[MAX_SEGMENTS]; /* 1B Flag for the message type */
+	u_short length[MAX_SEGMENTS]; /* 2B Length of the segment */
+	u_short payload[MAX_SEGMENTS][MAX_PAYLOAD]; /* Segment payload */
 	
 	struct packet_stat* next; /* Next pointer for the list */
 } packet_stat;
+
+
+typedef struct payload_stat {
+	u_short value;
+	int num;
+	struct payload_stat* next;
+} payload_stat;
+
+typedef struct payload_stat_container {
+	payload_stat* flag;
+	payload_stat* id_peer;
+	payload_stat* segments;
+	payload_stat* id_stream;
+	payload_stat* type;
+	payload_stat* type_flag;
+	payload_stat* length;
+} payload_stat_container;
 
 /* Define the host structure */
 typedef enum {upstream, downstream} direction;

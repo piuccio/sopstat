@@ -27,7 +27,6 @@
 #include "constants.h"
 #include "packet.h"
 #include "liste.h"
-#include "payload.h"
 
 /**
  * Insert a statistic packet inside a list
