@@ -157,13 +157,17 @@ int main(int argc, char* argv[]) {
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
+
+		print_graph(argv[2], argv[4]);
+
 		fclose(payload);
+
         return NO_ERROR; 
 }
 
 void usage(void) {
         printf("Sopstat is a postprocessing tools for the analisys of a pcap capture of the sopcast traffic\n");
-        printf("USAGE:\n\t sopstat capture.pcap path_to_results ip_address\n");
+        printf("USAGE:\n\t sopstat capture.pcap path_to_results ip_address directory_to_save_pictures\n");
         printf("\t- capture.pcap is a pcap capture containing the stream to analyze, ");
         printf("analysis must be filtered such that each packet involve one single host.\n");
         printf("\t- path_to_results is the folder where sopstat will generate the files containing the statistics\n");
