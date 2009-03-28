@@ -46,6 +46,7 @@ long num_pkt=0;
 FILE* payload;
 payload_stat_container* container;
 int i;
+video_flow* video;
 
 /* Time dimension */
 time_stat* timestamp; 
@@ -123,6 +124,12 @@ int main(int argc, char* argv[]) {
 			container->type_flag = NULL;
 			container->length = NULL;
 		}
+		/* Init the video structure */
+		video = (video_flow*)malloc(sizeof(video_flow));
+		video->out_of_sequence = 0;
+		video->host = NULL;
+		video->data = NULL;
+		video->last = NULL;
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
@@ -145,10 +152,12 @@ int main(int argc, char* argv[]) {
 		//dump_udp_payload(tree, payload);
 		//print_payload_statistics(container, payload);
 		//print_chisquare(tree, payload);
-		print_video_payload(tree, payload);
+		//print_video_payload(tree, payload);
+		print_video(video, payload);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
+		fclose(payload);
         return NO_ERROR; 
 }
 
@@ -199,6 +208,9 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	
 	/* Store it also in the time dimension */
 	register_packet(timestamp, &stat, dir);
+	
+	/* Extract the video information */
+	exctract_video(video, &stat, host);
 }
 
 
