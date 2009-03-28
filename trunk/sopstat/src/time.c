@@ -22,7 +22,8 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 			/* It goes also in the aggregated udp flow */
 			t->pkt[udp]++;
 			t->size[udp] += pkt->iplen;
-			if (is_video(pkt)) {
+			boolean is_video_pkt = is_video(pkt); 
+			if (is_video_pkt) {
 				t->videopkt[udp]++;
 		    	t->videosize[udp] += pkt->iplen;
 			}
@@ -30,12 +31,13 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 				t->discoverypkt[udp]++;
 				t->discoverysize[udp]+=pkt->iplen;
 			}
-			register_host(host, t, udp);
+			register_host(host, t, udp, is_video_pkt);
 		}
 		
 		t->pkt[flow]++;
 		t->size[flow] += pkt->iplen;
-		if (is_video(pkt)) {
+		boolean is_video_pkt = is_video(pkt); 
+		if (is_video_pkt) {
 			t->videopkt[flow]++;
 		    t->videosize[flow] += pkt->iplen;
 		}
@@ -43,7 +45,7 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 				t->discoverypkt[flow]++;
 				t->discoverysize[flow]+=pkt->iplen;
 			}
-		register_host(host, t, flow);
+		register_host(host, t, flow, is_video_pkt);
 		
 	} else {
 		if ( t->last == NULL ) {
@@ -82,6 +84,9 @@ void init_time_stat(time_stat *timestamp) {
 		timestamp->size[i] = 0;
 		timestamp->videopkt[i] = 0;
 		timestamp->videosize[i] = 0;
+		timestamp->discoverypkt[i] = 0;
+		timestamp->discoverysize[i] = 0;
+		timestamp->video_hosts[i] = 0;
 		timestamp->hostnames[i] = NULL;
 	}
 	timestamp->next = NULL;
@@ -98,7 +103,7 @@ int print_time(time_stat *t, char * nome) {
 		printf("[ERROR] Unable to create %s\n", fname);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps]\n");
+	fprintf(ft[udpUP], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps] [Peers]\n");
 	
 	sprintf(fname, "%s/time_dwudp.dat", nome);
 	ft[udpDW] = fopen(fname, "w");
@@ -107,7 +112,7 @@ int print_time(time_stat *t, char * nome) {
 		fclose(ft[udpUP]);
 		return INVALID_FOLDER;
 	}
-	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps]\n");
+	fprintf(ft[udpDW], "#[timesample] [size in kB] [number of packets] [# video packets] [Videosize in kB] [Number of host] [discovery pkt] [discovery rate Bps] [Peers]\n");
 	
 	sprintf(fname, "%s/time_uptcp.dat", nome);
 	ft[tcpUP] = fopen(fname, "w");
@@ -156,7 +161,7 @@ void print_time_flow(time_stat *t, int flow) {
 	u_long i=0;
 	while ( i <= t->last->ts ) {
 		if ( to_print->ts <= i ) {
-			fprintf(ft[flow], "%d %ld %d %d %d %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY), to_print->hosts[flow], to_print->discoverypkt[flow], to_print->discoverysize[flow]/TIME_GRANULARITY);
+			fprintf(ft[flow], "%d %ld %d %d %d %d %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY), to_print->hosts[flow], to_print->discoverypkt[flow], to_print->discoverysize[flow]/TIME_GRANULARITY, to_print->video_hosts[flow]);
 			to_print = to_print->next;
 		} else {
 			fprintf(ft[flow], "%lu 0 0 0 0 0\n", i*10);
@@ -203,7 +208,7 @@ boolean is_discovery(packet_stat *pkt){
 	return false;	  
 }
 
-void register_host(u_long ip, time_stat *t, int flow) {
+void register_host(u_long ip, time_stat *t, int flow, boolean is_video) {
 	ip_host* list = t->hostnames[flow];
 	while ( list != NULL ) {
 		if ( list->ip == ip ) {
@@ -220,4 +225,33 @@ void register_host(u_long ip, time_stat *t, int flow) {
 	new->next = t->hostnames[flow];
 	t->hostnames[flow] = new;
 	t->hosts[flow]++;
+	if (is_video) t->video_hosts[flow]++;
+}
+
+/*
+ * This function is used to automatically print all the pictures related to the analyzed capture
+ */
+void print_graph(char* base_name, char * dir_name){
+	FILE* parameters;
+	printf("ciao");
+	char fname[FILENAME_MAX];
+	sprintf(fname, "%s/parameters.gp", base_name);
+	parameters = fopen(fname, "w");
+	if (parameters == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		fclose(parameters);
+		return;
+	}
+	fprintf(parameters, "#File with gnuplot parameters\n");
+	fprintf(parameters, "set macros\n");
+	fprintf(parameters, "name = \"%s\"\n", dir_name);
+	fprintf(parameters, "dir = \"%s\"\n", base_name);
+	fprintf(parameters, "`if [ ! -d @dir/@name ]; then mkdir @dir/@name ;  fi`\n");
+	//fprintf(parameters, "load sprintf(\"%s/print.plt\",dir)");
+	fprintf(parameters, "load sprintf(\"%s/print.plt\",dir)","%s");
+	fclose(parameters);
+	char command[FILENAME_MAX];
+	sprintf(command, "gnuplot %s", fname);
+	printf("comando %s\n" , command);
+	system(command);
 }
