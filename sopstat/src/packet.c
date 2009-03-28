@@ -64,6 +64,9 @@ boolean parse_ip(const u_char *packet, struct packet_stat *stat, payload_stat_co
 		return false;
 	}
 	
+	/* Assume that packets are not video */
+	stat->video_segment = -1;
+	
 	/* Read the IP payload */
 	boolean valid = true;
 	switch( datagram->ip_p ) {
@@ -193,11 +196,18 @@ void parse_sopcast(const u_char *packet, struct packet_stat *stat, int len, payl
 			add_payload_stat(container->length, stat->length[i]);
 		}
 		
+		stat->sequence[i] = (*(packet + shift + 4)<<24) + (*(packet + shift + 5)<<16) + (*(packet + shift + 6)<<8) + *(packet + shift + 7);
+		
 		int max_p = (stat->length[i] > MAX_PAYLOAD) ? MAX_PAYLOAD : stat->length[i];
 		for (j=0; j<max_p; j++) {
-			stat->payload[i][j] = *(packet + shift + 4 + j);
+			stat->payload[i][j] = *(packet + shift + 8 + j);
 		}
 		shift += stat->length[i];
+		
+		/* Is this a video packet ? */
+		if ( stat->type[i] == 6 && stat->type_flag[i] == 1 && stat->length[i] >= 100) {
+			stat->video_segment = i;
+		}
 	}
 }
 
@@ -275,10 +285,12 @@ void statcopy(packet_stat *dst, packet_stat *src) {
 		dst->type[i] = src->type[i];
 		dst->type_flag[i] = src->type_flag[i];
 		dst->length[i] = src->length[i];
+		dst->sequence[i] = src->sequence[i];
 		for (j=0; j<MAX_PAYLOAD; j++) {
 			dst->payload[i][j] = src->payload[i][j];
 		}
 	}
+	dst->video_segment = src->video_segment;
 	
 	dst->next = NULL;
 }

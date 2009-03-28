@@ -33,8 +33,10 @@ typedef struct packet_stat {
 	u_short type[MAX_SEGMENTS]; /* 1B Type of message */ 
 	u_short type_flag[MAX_SEGMENTS]; /* 1B Flag for the message type */
 	u_short length[MAX_SEGMENTS]; /* 2B Length of the segment */
+	int sequence[MAX_SEGMENTS]; /* 4B converted, sequence number of the payload */
 	u_short payload[MAX_SEGMENTS][MAX_PAYLOAD]; /* Segment payload */
-	
+	/* Additional info */
+	int video_segment; /* Find easily the video segments, -1 if the packet doesn't contain video */ 
 	struct packet_stat* next; /* Next pointer for the list */
 } packet_stat;
 
