@@ -40,20 +40,20 @@ set output sprintf("%s/%s/data_sent.jpeg",dir,name)
 set title 'Data sent (upload)' 
 set xlabel "Time (seconds) "
 set ylabel "Data sent kB/s"
-plot sprintf("%s/time_upudp.dat",dir) using 1:3 with lines title ""
+plot sprintf("%s/time_upudp.dat",dir) using 1:2 with lines title ""
 
 set output sprintf("%s/%s/data_downloaded.jpeg",dir,name)
 set title 'Data received (download)' 
 set xlabel "Time (seconds) "
 set ylabel "Data received kB/s"
-plot sprintf("%s/time_dwudp.dat",dir) using 1:3 with lines title ""
+plot sprintf("%s/time_dwudp.dat",dir) using 1:2 with lines title ""
 
 
 set output sprintf("%s/%s/data_and_video_downloaded.jpeg",dir,name)
 set title 'Data and Video received (download)' 
 set xlabel "Time (seconds) "
 set ylabel "Data received kB/s"
-plot sprintf("%s/time_dwudp.dat",dir) using 1:3 with lines title "Total Data", \
+plot sprintf("%s/time_dwudp.dat",dir) using 1:2 with lines title "Total Data", \
 sprintf("%s/time_dwudp.dat",dir) using 1:5 with lines title "Video"
 
 
