@@ -49,4 +49,33 @@ set ylabel "Data received kB/s"
 plot sprintf("%s/time_dwudp.dat",dir) using 1:3 with lines title ""
 
 
+set output sprintf("%s/%s/data_and_video_downloaded.jpeg",dir,name)
+set title 'Data and Video received (download)' 
+set xlabel "Time (seconds) "
+set ylabel "Data received kB/s"
+plot sprintf("%s/time_dwudp.dat",dir) using 1:3 with lines title "Total Data", \
+sprintf("%s/time_dwudp.dat",dir) using 1:5 with lines title "Video"
+
+
+set output sprintf("%s/%s/packet_size.jpeg",dir,name)
+set title 'UDP Packet Size Distribution' 
+set xlabel "Time (seconds) "
+set ylabel "Packet Size Byte"
+plot sprintf("%s/stream.dat",dir) using 1:5 with dots title ""
+
+
+set output sprintf("%s/%s/packet_size_up.jpeg",dir,name)
+set title 'UDP Packet Size Distribution (upload)' 
+set xlabel "Time (seconds) "
+set ylabel "Packet Size Byte"
+plot sprintf("%s/upudp.dat",dir) using 1:5 with dots title ""
+
+
+set output sprintf("%s/%s/packet_size_dw.jpeg",dir,name)
+set title 'UDP Packet Size Distribution (download)' 
+set xlabel "Time (seconds) "
+set ylabel "Packet Size Byte"
+plot sprintf("%s/dwudp.dat",dir) using 1:5 with dots title ""
+
+
 #pause -1 "Press enter to quit!"
