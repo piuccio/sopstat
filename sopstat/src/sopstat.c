@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         char errbuf[PCAP_ERRBUF_SIZE];
         
         /* Check required inputs */
-        if ( argc < 4 ) {
+        if ( argc < 5 ) {
                 usage();
                 return INPUT_ERROR;
         }
@@ -167,12 +167,12 @@ int main(int argc, char* argv[]) {
 
 void usage(void) {
         printf("Sopstat is a postprocessing tools for the analisys of a pcap capture of the sopcast traffic\n");
-        printf("USAGE:\n\t sopstat capture.pcap path_to_results ip_address directory_to_save_pictures\n");
+        printf("USAGE:\n\t sopstat capture.pcap path_to_results ip_address image_folder\n");
         printf("\t- capture.pcap is a pcap capture containing the stream to analyze, ");
         printf("analysis must be filtered such that each packet involve one single host.\n");
         printf("\t- path_to_results is the folder where sopstat will generate the files containing the statistics\n");
         printf("\t- ip_address is the host that is generating or receiving the sopcast stream\n");
-        printf("\t- [ip_address] isolate a flow and dump the udp payload\n");
+        printf("\t- image_folder name of the folder where sopstat will generate the images, relative to path_to_results\n");
         printf("This software will output the statistics in the specified folder\n");
 }
 

@@ -233,7 +233,7 @@ void register_host(u_long ip, time_stat *t, int flow, boolean is_video) {
  */
 void print_graph(char* base_name, char * dir_name){
 	FILE* parameters;
-	printf("ciao");
+	
 	char fname[FILENAME_MAX];
 	sprintf(fname, "%s/parameters.gp", base_name);
 	parameters = fopen(fname, "w");
