@@ -3,6 +3,7 @@
 #include "time.h"
 
 FILE* ft[FLOWS];
+FILE* avg;
 /**
  * Parse the information of a packet
  */
@@ -21,31 +22,37 @@ void register_packet(time_stat *t, packet_stat *pkt, int direction) {
 			flow = (direction == upstream) ? udpUP : udpDW;
 			/* It goes also in the aggregated udp flow */
 			t->pkt[udp]++;
-			t->size[udp] += pkt->iplen;
+			t->size[udp] += pkt->iplen - SIZE_UDP;
+			
+			/* Classify video */
 			boolean is_video_pkt = is_video(pkt); 
-			if (is_video_pkt) {
+			if ( is_video_pkt ) {
 				t->videopkt[udp]++;
-		    	t->videosize[udp] += pkt->iplen;
+		    	t->videosize[udp] += pkt->iplen - SIZE_UDP - 16; //Remove known bytes
 			}
-			if (is_discovery(pkt)){
+			
+			/* Classify discovery */
+			boolean is_discovery_pkt = is_discovery(pkt); 
+			if ( is_discovery_pkt ){
 				t->discoverypkt[udp]++;
-				t->discoverysize[udp]+=pkt->iplen;
+				t->discoverysize[udp] += pkt->iplen - SIZE_UDP;
 			}
-			register_host(host, t, udp, is_video_pkt);
+			register_host(host, t, udp, is_video_pkt, is_discovery_pkt);
 		}
 		
 		t->pkt[flow]++;
-		t->size[flow] += pkt->iplen;
+		t->size[flow] += pkt->iplen - SIZE_UDP;
 		boolean is_video_pkt = is_video(pkt); 
 		if (is_video_pkt) {
 			t->videopkt[flow]++;
-		    t->videosize[flow] += pkt->iplen;
+		    t->videosize[flow] += pkt->iplen - SIZE_UDP - 16;
 		}
+		boolean is_discovery_pkt = is_discovery(pkt);
 		if (is_discovery(pkt)){
 				t->discoverypkt[flow]++;
-				t->discoverysize[flow]+=pkt->iplen;
+				t->discoverysize[flow]+=pkt->iplen - SIZE_UDP;
 			}
-		register_host(host, t, flow, is_video_pkt);
+		register_host(host, t, flow, is_video_pkt, is_discovery_pkt);
 		
 	} else {
 		if ( t->last == NULL ) {
@@ -152,6 +159,28 @@ int print_time(time_stat *t, char * nome) {
 		fclose( ft[i] );
 	}
 	
+	
+	sprintf(fname, "%s/averages.dat", nome);
+	avg = fopen(fname, "w");
+	if (avg == NULL) {
+		printf("[ERROR] Unable to create %s\n", fname);
+		return INVALID_FOLDER;
+	}
+	double avg_video_dw = print_avg_video_size(t, avg, udpDW);
+	double avg_data_on_video_dw = print_avg_data_on_video_size(t, avg, udpDW);
+	double avg_video_up = print_avg_video_size(t, avg, udpUP);
+	double avg_data_on_video_up = print_avg_data_on_video_size(t, avg, udpUP);
+	fprintf(avg, "Average data downloaded %.2f kBps\n\n", print_avg_data_size(t, avg, udpDW) );
+	fprintf(avg, "Average video downloaded %.2f kBps \n", avg_video_dw );
+	fprintf(avg, "\tover an average data downloaded %.2f kBps", avg_data_on_video_dw );
+	fprintf(avg, "\n\t%.2f %%\n\n", avg_video_dw/avg_data_on_video_dw*100.0 );
+	fprintf(avg, "Average data uploaded %.2f kBps\n\n", print_avg_data_size(t, avg, udpUP) );
+	fprintf(avg, "Average video downloaded %.2f kBps \n", avg_video_up );
+	fprintf(avg, "\tover an average data downloaded %.2f kBps", avg_data_on_video_up );
+	fprintf(avg, "\n\t%.2f %%\n\n", avg_video_up/avg_data_on_video_up*100.0 );
+	
+	
+	fclose(avg);
 	return 0;	
 }
 
@@ -164,7 +193,7 @@ void print_time_flow(time_stat *t, int flow) {
 			fprintf(ft[flow], "%d %ld %d %d %d %d %d %d %d\n", to_print->ts * TIME_GRANULARITY, to_print->size[flow]/(1024 * TIME_GRANULARITY), to_print->pkt[flow], to_print->videopkt[flow], to_print->videosize[flow]/(1024*TIME_GRANULARITY), to_print->hosts[flow], to_print->discoverypkt[flow], to_print->discoverysize[flow]/TIME_GRANULARITY, to_print->video_hosts[flow]);
 			to_print = to_print->next;
 		} else {
-			fprintf(ft[flow], "%lu 0 0 0 0 0\n", i*10);
+			fprintf(ft[flow], "%lu 0 0 0 0 0 0 0 0\n", i*10);
 		}
 		
 		i++;
@@ -192,7 +221,7 @@ boolean timeval_bigger(struct timeval a, struct timeval b) {
  *   - FALSE : other type
  */
 boolean is_video(packet_stat *pkt){
-	if ( (pkt->type[0] == 6) && (pkt->type_flag[0] == 1) && (pkt->length[0] > 1000) && (pkt->segments == 1) )
+	if ( pkt->video_segment >= 0 && pkt->length[pkt->video_segment] > 600 && pkt->sequence[pkt->video_segment] > 1 )
 	  return true;
 	return false;	  
 }
@@ -203,12 +232,13 @@ boolean is_video(packet_stat *pkt){
  *   - FALSE : other type
  */
 boolean is_discovery(packet_stat *pkt){
-	if ( (pkt->flag == 0xff) && (pkt->id_peer == 0xff) && (pkt->length[0] == 44 ) && (pkt->segments == 1) )
+	//if ( (pkt->flag == 0xff) && (pkt->id_peer == 0xff) && (pkt->length[0] == 44 ) && (pkt->segments == 1) )
+	if ( (pkt->flag == 0xff) && (pkt->id_peer == 0xff) )
 	  return true;
 	return false;	  
 }
 
-void register_host(u_long ip, time_stat *t, int flow, boolean is_video) {
+void register_host(u_long ip, time_stat *t, int flow, boolean is_video, boolean is_discovery) {
 	ip_host* list = t->hostnames[flow];
 	while ( list != NULL ) {
 		if ( list->ip == ip ) {
@@ -226,6 +256,7 @@ void register_host(u_long ip, time_stat *t, int flow, boolean is_video) {
 	t->hostnames[flow] = new;
 	t->hosts[flow]++;
 	if (is_video) t->video_hosts[flow]++;
+	if (is_discovery) t->discoveryhosts[flow]++;
 }
 
 /*
@@ -252,6 +283,50 @@ void print_graph(char* base_name, char * dir_name){
 	fclose(parameters);
 	char command[FILENAME_MAX];
 	sprintf(command, "gnuplot %s", fname);
-	printf("comando %s\n" , command);
-	system(command);
+	if (!system(command)) printf("[ERROR] Something wrong with %s", command);
+}
+
+double print_avg_video_size(time_stat *time, FILE* f, int flow) {
+	time_stat* t = time;
+	int num_samples=0,total_size=0;
+	
+	while (t != NULL) {
+		if ( t->videopkt[flow] > 0 ) {
+			num_samples++;
+			total_size += t->videosize[flow];
+		}
+		t = t->next;
+	}
+	
+	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
+}
+
+double print_avg_data_size(time_stat *time, FILE* f, int flow) {
+	time_stat* t = time;
+	int num_samples=0,total_size=0;
+	
+	while (t != NULL) {
+		if ( t->pkt[flow] > 0 ) {
+			num_samples++;
+			total_size += t->size[flow];
+		}
+		t = t->next;
+	}
+	
+	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
+}
+
+double print_avg_data_on_video_size(time_stat *time, FILE* f, int flow) {
+	time_stat* t = time;
+	int num_samples=0,total_size=0;
+	
+	while (t != NULL) {
+		if ( t->videopkt[flow] > 0 ) {
+			num_samples++;
+			total_size += t->size[flow];
+		}
+		t = t->next;
+	}
+	
+	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
 }

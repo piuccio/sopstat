@@ -23,6 +23,7 @@ typedef struct video_list {
 	int sequence;
 	int length_stored;
 	int retransmission;
+	int packet_size;
 	struct video_list* next;
 } video_list;
 	
@@ -31,7 +32,7 @@ typedef struct video_list {
 void add_payload_stat(payload_stat *, u_short);
 void print_payload_statistics(payload_stat_container* , FILE* );
 void print_payload_stat(payload_stat* , FILE* );
-void print_video_payload(ipnode*, FILE* );
+void print_video_payload(ipnode*, FILE*, int );
 void print_video(video_flow*, FILE*);
 void exctract_video(video_flow*, packet_stat*, u_int);
 void fill_video(video_list*, packet_stat*);

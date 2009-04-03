@@ -205,8 +205,11 @@ void parse_sopcast(const u_char *packet, struct packet_stat *stat, int len, payl
 		shift += stat->length[i];
 		
 		/* Is this a video packet ? */
-		if ( stat->type[i] == 6 && stat->type_flag[i] == 1 && stat->length[i] >= 100) {
-			stat->video_segment = i;
+		if ( stat->type[i] == 6 && stat->type_flag[i] == 1 && stat->length[i] >= 200) {
+			// Exclude also 01ffffff
+			if ( stat->payload[i][1]!=0xff && stat->payload[i][2]!=0xff && stat->payload[i][3]!=0xff) {
+				stat->video_segment = i;
+			}
 		}
 	}
 }
