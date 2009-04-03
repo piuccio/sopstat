@@ -38,7 +38,9 @@ boolean is_video(packet_stat *);
 void register_host(u_long, time_stat *, int, boolean, boolean);
 boolean is_discovery(packet_stat *);
 void print_graph(char* , char* );
-double print_avg_video_size(time_stat *, FILE* , int);
-double print_avg_data_size(time_stat *, FILE* , int );
-double print_avg_data_on_video_size(time_stat *, FILE* , int );
+double avg_video_size(time_stat *, int );
+double avg_data_size(time_stat *, int );
+double avg_data_on_video_size(time_stat *, int );
+double total_video_size(time_stat *, int );
+double total_data_size(time_stat *, int );
 #endif /*TIME_H_*/

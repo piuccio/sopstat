@@ -166,17 +166,21 @@ int print_time(time_stat *t, char * nome) {
 		printf("[ERROR] Unable to create %s\n", fname);
 		return INVALID_FOLDER;
 	}
-	double avg_video_dw = print_avg_video_size(t, avg, udpDW);
-	double avg_data_on_video_dw = print_avg_data_on_video_size(t, avg, udpDW);
-	double avg_video_up = print_avg_video_size(t, avg, udpUP);
-	double avg_data_on_video_up = print_avg_data_on_video_size(t, avg, udpUP);
-	fprintf(avg, "Average data downloaded %.2f kBps\n\n", print_avg_data_size(t, avg, udpDW) );
+	double avg_video_dw = avg_video_size(t, udpDW);
+	double avg_data_on_video_dw = avg_data_on_video_size(t, udpDW);
+	double avg_video_up = avg_video_size(t, udpUP);
+	double avg_data_on_video_up = avg_data_on_video_size(t, udpUP);
+	fprintf(avg, "Total data downloaded %.2f kB\n\n", total_data_size(t, udpDW) );
+	fprintf(avg, "Total video downloaded %.2f kB\n\n", total_video_size(t, udpDW) );
+	fprintf(avg, "Average data downloaded %.2f kBps\n\n", avg_data_size(t, udpDW) );
 	fprintf(avg, "Average video downloaded %.2f kBps \n", avg_video_dw );
 	fprintf(avg, "\tover an average data downloaded %.2f kBps", avg_data_on_video_dw );
 	fprintf(avg, "\n\t%.2f %%\n\n", avg_video_dw/avg_data_on_video_dw*100.0 );
-	fprintf(avg, "Average data uploaded %.2f kBps\n\n", print_avg_data_size(t, avg, udpUP) );
-	fprintf(avg, "Average video downloaded %.2f kBps \n", avg_video_up );
-	fprintf(avg, "\tover an average data downloaded %.2f kBps", avg_data_on_video_up );
+	fprintf(avg, "Total data uploaded %.2f kB\n\n", total_data_size(t, udpUP) );
+	fprintf(avg, "Total video uploaded %.2f kB\n\n", total_video_size(t, udpUP) );
+	fprintf(avg, "Average data uploaded %.2f kBps\n\n", avg_data_size(t, udpUP) );
+	fprintf(avg, "Average video uploaded %.2f kBps \n", avg_video_up );
+	fprintf(avg, "\tover an average data uploaded %.2f kBps", avg_data_on_video_up );
 	fprintf(avg, "\n\t%.2f %%\n\n", avg_video_up/avg_data_on_video_up*100.0 );
 	
 	
@@ -286,7 +290,7 @@ void print_graph(char* base_name, char * dir_name){
 	if (!system(command)) printf("[ERROR] Something wrong with %s", command);
 }
 
-double print_avg_video_size(time_stat *time, FILE* f, int flow) {
+double avg_video_size(time_stat *time, int flow) {
 	time_stat* t = time;
 	int num_samples=0,total_size=0;
 	
@@ -301,7 +305,7 @@ double print_avg_video_size(time_stat *time, FILE* f, int flow) {
 	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
 }
 
-double print_avg_data_size(time_stat *time, FILE* f, int flow) {
+double avg_data_size(time_stat *time, int flow) {
 	time_stat* t = time;
 	int num_samples=0,total_size=0;
 	
@@ -316,7 +320,7 @@ double print_avg_data_size(time_stat *time, FILE* f, int flow) {
 	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
 }
 
-double print_avg_data_on_video_size(time_stat *time, FILE* f, int flow) {
+double avg_data_on_video_size(time_stat *time, int flow) {
 	time_stat* t = time;
 	int num_samples=0,total_size=0;
 	
@@ -329,4 +333,28 @@ double print_avg_data_on_video_size(time_stat *time, FILE* f, int flow) {
 	}
 	
 	return (total_size/1024.0)/(num_samples*TIME_GRANULARITY);
+}
+
+double total_data_size(time_stat *time, int flow) {
+	time_stat* t = time;
+	int total_size=0;
+	
+	while (t != NULL) {
+		total_size += t->size[flow];
+		t = t->next;
+	}
+	
+	return total_size/1024.0;
+}
+
+double total_video_size(time_stat *time, int flow) {
+	time_stat* t = time;
+	int total_size=0;
+	
+	while (t != NULL) {
+		total_size += t->videosize[flow];
+		t = t->next;
+	}
+	
+	return total_size/1024.0;
 }
