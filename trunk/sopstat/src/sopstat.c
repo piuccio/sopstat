@@ -43,10 +43,12 @@ char filter_exp[] = "not(udp.port < 1028) and not(udp.port == 42166)";
 /* List of packets */
 ipnode* tree;
 long num_pkt=0;
-FILE* payload;
+FILE* payload_rcv;
+FILE* payload_snt;
 payload_stat_container* container;
 int i;
-video_flow* video;
+video_flow* video_received;
+video_flow* video_sent;
 
 /* Time dimension */
 time_stat* timestamp; 
@@ -107,11 +109,11 @@ int main(int argc, char* argv[]) {
         }
         init_time_stat(timestamp);
         
-		/* Open the file for the payload */
+		/* Open the files for the payload */
 		char fname[FILENAME_MAX];
-		sprintf(fname, "%s/payload.dump", argv[2]);
-		payload = fopen(fname, "w");
-		if (payload == NULL) {
+		sprintf(fname, "%s/payload_received.dump", argv[2]);
+		payload_rcv = fopen(fname, "w");
+		if (payload_rcv == NULL) {
 			printf("[ERROR] Unable to create %s\n", fname);
 			return INVALID_FOLDER;
 		} else {
@@ -124,12 +126,34 @@ int main(int argc, char* argv[]) {
 			container->type_flag = NULL;
 			container->length = NULL;
 		}
+		sprintf(fname, "%s/payload_sent.dump", argv[2]);
+		payload_snt = fopen(fname, "w");
+		if (payload_snt == NULL) {
+			fclose(payload_rcv);
+			printf("[ERROR] Unable to create %s\n", fname);
+			return INVALID_FOLDER;
+		} else {
+			container = (payload_stat_container*) malloc(sizeof(payload_stat_container));
+			container->flag = NULL;
+			container->id_peer = NULL;
+			container->segments = NULL;
+			container->id_stream = NULL;
+			container->type = NULL;
+			container->type_flag = NULL;
+			container->length = NULL;
+		}
+		
 		/* Init the video structure */
-		video = (video_flow*)malloc(sizeof(video_flow));
-		video->out_of_sequence = 0;
-		video->host = NULL;
-		video->data = NULL;
-		video->last = NULL;
+		video_received = (video_flow*)malloc(sizeof(video_flow));
+		video_received->out_of_sequence = 0;
+		video_received->host = NULL;
+		video_received->data = NULL;
+		video_received->last = NULL;
+		video_sent = (video_flow*)malloc(sizeof(video_flow));
+		video_sent->out_of_sequence = 0;
+		video_sent->host = NULL;
+		video_sent->data = NULL;
+		video_sent->last = NULL;
         
         /* Grab packet in a loop */
 		printf("Processing file %s, this may take a while\n", argv[1]); 
@@ -153,14 +177,16 @@ int main(int argc, char* argv[]) {
 		//print_payload_statistics(container, payload);
 		//print_chisquare(tree, payload);
 		//print_video_payload(tree, payload);
-		print_video(video, payload);
+		print_video(video_received, payload_rcv);
+		print_video(video_sent, payload_snt);
 		
 		printf("\nOperation completed successfully\n");
 		printf("%ld packet analyzed in %f seconds\n", num_pkt, (float)clock()/CLOCKS_PER_SEC);
 
 		print_graph(argv[2], argv[4]);
 
-		fclose(payload);
+		fclose(payload_rcv);
+		fclose(payload_snt);
 
         return NO_ERROR; 
 }
@@ -214,7 +240,11 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	register_packet(timestamp, &stat, dir);
 	
 	/* Extract the video information */
-	exctract_video(video, &stat, host);
+	if ( dir == upstream ) { 
+		exctract_video(video_sent, &stat, host);
+	} else {
+		exctract_video(video_received, &stat, host);
+	}
 }
 
 

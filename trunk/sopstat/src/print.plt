@@ -61,21 +61,21 @@ set output sprintf("%s/%s/packet_size.jpeg",dir,name)
 set title 'UDP Packet Size Distribution' 
 set xlabel "Time (seconds) "
 set ylabel "Packet Size Byte"
-plot sprintf("%s/stream.dat",dir) using 1:5 with dots title ""
+plot sprintf("%s/stream.dat",dir) using 1:5 with points title ""
 
 
 set output sprintf("%s/%s/packet_size_up.jpeg",dir,name)
 set title 'UDP Packet Size Distribution (upload)' 
 set xlabel "Time (seconds) "
 set ylabel "Packet Size Byte"
-plot sprintf("%s/upudp.dat",dir) using 1:5 with dots title ""
+plot sprintf("%s/upudp.dat",dir) using 1:5 with points title ""
 
 
 set output sprintf("%s/%s/packet_size_dw.jpeg",dir,name)
 set title 'UDP Packet Size Distribution (download)' 
 set xlabel "Time (seconds) "
 set ylabel "Packet Size Byte"
-plot sprintf("%s/dwudp.dat",dir) using 1:5 with dots title ""
+plot sprintf("%s/dwudp.dat",dir) using 1:5 with points title ""
 
 
 #pause -1 "Press enter to quit!"

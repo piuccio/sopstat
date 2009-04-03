@@ -52,13 +52,13 @@ void print_payload_stat(payload_stat* s, FILE* f) {
 	} 
 }
 
-void print_video_payload(ipnode* n, FILE* f) {
+void print_video_payload(ipnode* n, FILE* f, int flow ) {
 	packet_stat *s;
 	int i,j,maxi,maxp;
 	/* Iterate on the node */
 	while (n != NULL) {
 		/* Get the first stat and iterate */
-		s = n->first[udpDW];
+		s = n->first[flow];
 		while (s != NULL) {
 			/* How many segments ? */
 			maxi = s->segments > MAX_SEGMENTS ? MAX_SEGMENTS : s->segments;
@@ -82,19 +82,19 @@ void print_video_payload(ipnode* n, FILE* f) {
 	}
 }
 
-void print_video(video_flow *video, FILE *f) {
+void print_video(video_flow *video, FILE *frcv) {
 	video_list* data = video->data;
 	int i;
 	while (data != NULL) {
 		//fprintf(f,"[%ld.%ld]seq %d\n", data->ts.tv_sec, data->ts.tv_usec, data->sequence);
-		fprintf(f,"[%.3d] ", data->sequence);
+		//fprintf(frcv,"[%.4d] ", data->sequence);
 		for (i=0; i<data->length_stored; i++) {
-			fprintf(f,"%.2x ", data->payload[i]);
+			fprintf(frcv,"%.2x ", data->payload[i]);
 		}
-		fprintf(f,"\n");
+		fprintf(frcv,"\n");
 		data = data->next;
 	}
-	printf("Total of %d out of sequence packets", video->out_of_sequence);
+	printf("\nTotal of %d out of sequence packets", video->out_of_sequence);
 }
 
 void exctract_video(video_flow* video, packet_stat* stat, u_int host) {
@@ -123,7 +123,7 @@ void exctract_video(video_flow* video, packet_stat* stat, u_int host) {
 				/* Host is here, check for retransmission */
 				if ( h->last->sequence >= stat->sequence[stat->video_segment] ) {
 					//Out of sequence
-					printf("[%ld.%ld]Out of sequence %d after %d\n", stat->real_ts.tv_sec, stat->real_ts.tv_usec, stat->sequence[stat->video_segment], h->last->sequence);
+					//printf("[%ld.%ld]Out of sequence %d after %d\n", stat->real_ts.tv_sec, stat->real_ts.tv_usec, stat->sequence[stat->video_segment], h->last->sequence);
 					video->out_of_sequence++;
 				} else {
 					//Valid
@@ -161,6 +161,7 @@ void fill_video(video_list* data, packet_stat* stat) {
 	int i;
 	data->length_stored = (stat->length[stat->video_segment] > MAX_PAYLOAD) ? MAX_PAYLOAD : stat->length[stat->video_segment];
 	data->sequence = stat->sequence[stat->video_segment];
+	data->packet_size = stat->iplen;
 	data->ts = stat->real_ts;
 	for (i=0; i<data->length_stored; i++) {
 		data->payload[i] = stat->payload[stat->video_segment][i];

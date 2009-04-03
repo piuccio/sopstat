@@ -15,6 +15,7 @@ typedef struct time_stat {
 	int videosize[FLOWS]; /* lenght of video stream */
 	int discoverypkt[FLOWS]; /* number of packet to contact new peers */
 	int discoverysize[FLOWS]; /* lenght of packet to contact new hosts */
+	int discoveryhosts[FLOWS]; /* number of hosts that exchange discovery packets*/
 	struct ip_host* hostnames[FLOWS]; /* List of the hosts found */ 
 	struct time_stat* next;
 	struct time_stat* last;
@@ -34,7 +35,10 @@ void print_time_flow(time_stat *, int);
 int timeval_difference(struct timeval, struct timeval);
 boolean timeval_bigger(struct timeval, struct timeval);
 boolean is_video(packet_stat *);
-void register_host(u_long, time_stat *, int, boolean);
+void register_host(u_long, time_stat *, int, boolean, boolean);
 boolean is_discovery(packet_stat *);
 void print_graph(char* , char* );
+double print_avg_video_size(time_stat *, FILE* , int);
+double print_avg_data_size(time_stat *, FILE* , int );
+double print_avg_data_on_video_size(time_stat *, FILE* , int );
 #endif /*TIME_H_*/
