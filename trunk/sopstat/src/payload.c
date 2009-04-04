@@ -88,6 +88,7 @@ void print_video(video_flow *video, FILE *frcv) {
 	while (data != NULL) {
 		//fprintf(f,"[%ld.%ld]seq %d\n", data->ts.tv_sec, data->ts.tv_usec, data->sequence);
 		//fprintf(frcv,"[%.4d] ", data->sequence);
+		fprintf(frcv,"%u ", data->src);
 		for (i=0; i<data->length_stored; i++) {
 			fprintf(frcv,"%.2x ", data->payload[i]);
 		}
@@ -163,6 +164,7 @@ void fill_video(video_list* data, packet_stat* stat) {
 	data->sequence = stat->sequence[stat->video_segment];
 	data->packet_size = stat->iplen;
 	data->ts = stat->real_ts;
+	data->src = stat->src;
 	for (i=0; i<data->length_stored; i++) {
 		data->payload[i] = stat->payload[stat->video_segment][i];
 	}
