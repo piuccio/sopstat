@@ -18,6 +18,7 @@ typedef struct host_pointer {
 } host_pointer;
 
 typedef struct video_list {
+	u_int src;
 	u_short payload[MAX_PAYLOAD];
 	struct timeval ts;
 	int sequence;

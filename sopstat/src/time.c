@@ -287,7 +287,7 @@ void print_graph(char* base_name, char * dir_name){
 	fclose(parameters);
 	char command[FILENAME_MAX];
 	sprintf(command, "gnuplot %s", fname);
-	if (!system(command)) printf("[ERROR] Something wrong with %s", command);
+	if (system(command)) printf("[ERROR] Something wrong with %s", command);
 }
 
 double avg_video_size(time_stat *time, int flow) {
