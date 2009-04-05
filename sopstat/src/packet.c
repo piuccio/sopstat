@@ -13,7 +13,7 @@ struct timeval first_timestamp;
  * TRUE  -> this is a valid packet
  * FALSE -> the packet is not relevant for the statistics
  */
-boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header, const u_char *packet, payload_stat_container *container ) {
+boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header, const u_char *packet, payload_stat_container *container, int datalink ) {
         /* Structure for the relevant informations */
         int valid = false;
         if ( first_packet ) {
@@ -26,14 +26,32 @@ boolean parse_packet(struct packet_stat *stat, const struct pcap_pkthdr *header,
 		stat->real_ts = header->ts;
 		stat->wirelen = header->len;
 		
-		/* I assume that all packets are ethernet */
-        const struct ether_header *ethernet; /* The ethernet header */
-        ethernet = (struct ether_header*)(packet);
+		/* Check if I can manage this datalink */
+		const struct ether_header *ethernet;
+		
+		switch ( datalink ) {
+		case DLT_EN10MB:
+			/* Ethernet pakcet */
+        	ethernet = (struct ether_header*)(packet);
 
-        /* Read the Ethernet payload */
-        if ( ntohs(ethernet->ether_type) == ETHERTYPE_IP ) {
-			valid = parse_ip( (u_char*)(packet + SIZE_ETHERNET), stat, container );
-        }
+        	/* Read the Ethernet payload */
+        	if ( ntohs(ethernet->ether_type) == ETHERTYPE_IP ) {
+				valid = parse_ip( (u_char*)(packet + SIZE_ETHERNET), stat, container );
+    	    }
+			
+			break;
+		case DLT_LINUX_SLL:
+			/* Linux shell */
+			if ( *(packet + 14) == 8 && *(packet + 15) == 0 ) {
+				valid = parse_ip( (u_char*)(packet + SIZE_LINUX_SLL), stat, container );
+			}
+			
+			break;
+		default:
+			printf("[ERROR] Unrecognized datalink type %d", datalink);
+			exit(DATALINK_ERROR);
+			break;
+		}
 
 		/* All the packet informations are collected */
 		if ( valid && first_packet ) {

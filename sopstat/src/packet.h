@@ -64,7 +64,7 @@ typedef enum {upstream, downstream} direction;
 void serialize_packet(const struct packet_stat *, char *);
 void iptos(const u_int, char *);
 boolean stoip(u_int *, char*);
-boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char *, payload_stat_container * );
+boolean parse_packet(struct packet_stat *, const struct pcap_pkthdr *, const u_char *, payload_stat_container *, int );
 boolean parse_ip(const u_char *, struct packet_stat *, payload_stat_container * );
 void parse_tcp(const u_char *, struct packet_stat *);
 boolean parse_udp(const u_char *, struct packet_stat *, payload_stat_container * );
