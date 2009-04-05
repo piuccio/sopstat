@@ -41,6 +41,7 @@ struct bpf_program fp;		/* The compiled filter expression */
 char filter_exp[] = "not(udp.port < 1028) and not(udp.port == 42166)";
 
 /* List of packets */
+int datalink;
 ipnode* tree;
 long num_pkt=0;
 FILE* payload_rcv;
@@ -70,6 +71,7 @@ int main(int argc, char* argv[]) {
                 printf("[ERROR] Unable to open %s\n\t%s \n", argv[1], errbuf);
                 return INPUT_ERROR;
         }
+        
         /* Filters out unwanted traffic
         if (pcap_compile(handle, &fp, filter_exp, 0, 0) == -1) {
 			printf("[ERROR] Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle));
@@ -156,7 +158,8 @@ int main(int argc, char* argv[]) {
 		video_sent->last = NULL;
         
         /* Grab packet in a loop */
-		printf("Processing file %s, this may take a while\n", argv[1]); 
+		printf("Processing file %s, this may take a while\n", argv[1]);
+		datalink = pcap_datalink(handle);
         pcap_loop(handle, -1, populate_tree, NULL);
 		
 		/* And close the session */
@@ -206,8 +209,7 @@ void populate_tree(u_char *args, const struct pcap_pkthdr *header, const u_char 
 	/* Structure for the relevant informations */
 	struct packet_stat stat;
 	
-
-	if ( !parse_packet(&stat, header, packet, container ) ) {
+	if ( !parse_packet(&stat, header, packet, container, datalink ) ) {
 		//Nothing to do for this packet
 		#ifdef DEBUG
 			printf("\nDropping a packet at time %ld\n", stat.timestamp);

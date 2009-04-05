@@ -11,11 +11,13 @@ typedef enum {false, true} boolean;
  #define INVALID_IP 12
  #define MALLOC_ERROR 20
  #define FILTER_ERROR 30
+ #define DATALINK_ERROR 40
 
 /**
  * PROTOCOL CODES
  */
  #define SIZE_ETHERNET 14
+ #define SIZE_LINUX_SLL 16
  #define SIZE_UDP 8
  #define MAX_IP_ADDR 16
  
