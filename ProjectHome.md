@@ -1,0 +1,1 @@
+We want to generate user friendly statistics of a sopcast video stream. This software should be able to work both at the packet level, thus generating useful information for every single captured packet, and at the flow level aggregating information on a variable time dimension.
